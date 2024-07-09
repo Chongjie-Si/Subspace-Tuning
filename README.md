@@ -33,7 +33,7 @@
 
 ## <a id="introduction">📘 Introduction</a>
 
-Welcome to our repository, which contains a diverse collection of Subspace Tuning methods for Parameter-Efficient Fine-Tuning (PEFT). Subspace Tuning are essential for adapting large pre-trained models to specific tasks with minimal changes to the original parameters. It endeavors to identify the maximal projection of the optimal weight $\mathbf{W}^{*}$ onto the subspace spanned by the bases of $\phi(\mathbf{W})$, where $\phi(\mathbf{W})$ denotes the subspace transformation of the original frozen weight $\mathbf{W}$. For more details, please refer to [the original paper]().
+Welcome to our repository, which contains a diverse collection of Subspace Tuning methods for Parameter-Efficient Fine-Tuning (PEFT). Subspace Tuning are essential for adapting large pre-trained models to specific tasks with minimal changes to the original parameters. It endeavors to identify the maximal projection of the optimal weight $\mathbf{W}^{*}$ onto the subspace spanned by the bases of $\phi(\mathbf{W})$, where $\phi(\mathbf{W})$ denotes the subspace transformation of the original frozen weight $\mathbf{W}$. For more details, please refer to [the original paper](https://arxiv.org/abs/2407.05417).
 
 ![Framework](./resources/framework.png)
 
@@ -107,12 +107,12 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>SSB</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_SSB.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;">N/A</td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2407.05417">2024 Arxiv</td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>SSL</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_SSL.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;">N/A</td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2407.05417">2024 Arxiv</td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>BitFit</strong></td>
@@ -226,10 +226,11 @@ If you have any questions, suggestions, or feedback, please feel free to contact
 If you find this repository useful, please consider giving it a star and citing it in your work:
 
 ```bibtex
-@article{si2024,
-  title={},
-  author={},
-  journal={},
+@article{si2024see,
+  title={See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition}, 
+  author={Chongjie Si and Xiaokang Yang and Wei Shen},
+  journal={arXiv preprint arXiv:2407.05417},
+  url={arxiv.org/abs/2407.05417},
   year={2024}
 }
 ```
