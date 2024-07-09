@@ -10,13 +10,13 @@
 
   <div style="display: inline-block;">
     <a href="https://github.com/Chongjie-Si/Subspace-Tuning/blob/main/LICENSE" title="License">
-      <img src="https://img.shields.io/github/license/Chongjie-Si/Subspace-Tuning.svg" alt="License">
+      <img src="https://img.shields.io/github/license/Chongjie-Si/Subspace-Tuning" alt="License">
     </a>
     <a href="https://github.com/Chongjie-Si/Subspace-Tuning/issues" title="Issues or Pull Requests">
       <img src="https://img.shields.io/github/issues/Chongjie-Si/Subspace-Tuning" alt="GitHub Issues or Pull Requests">
     </a>
     <a href="https://github.com/Chongjie-Si/Subspace-Tuning/stargazers" title="GitHub Repo stars">
-      <img src="https://img.shields.io/github/stars/Chongjie-Si/Subspace-Tuning" alt="GitHub Repo stars">
+      <img src="https://img.shields.io/github/stars/Chongjie-Si/Subspace-Tuning?style=flat" alt="GitHub Repo stars">
     </a>
   </div>
 
