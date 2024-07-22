@@ -171,7 +171,7 @@ examples/text-classification/run_glue.py \
 <strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
 
 + `apply_lora`: Apply LoRA and other methods for the model.
-+ `lora_type`: `frd` for the utilization of the Linear module in [layers](../loralib/loralib/layers.py). If an alternative approach is preferred, you may replace the contents of [layers](../loralib/loralib/layers.py) directly with the contents from other files, such us [TriLoRA](../loralib/loralib/layers_trilora.py).
++ `lora_type`: `frd` for the utilization of the Linear module in [layers](../loralib/loralib/layers.py). If an alternative approach is preferred, you may replace the contents of [layers](../loralib/loralib/layers.py) directly with the contents from other files, such us [TriLoRA](../loralib/loralib/layers_TriLoRA.py).
 
 </details>
 

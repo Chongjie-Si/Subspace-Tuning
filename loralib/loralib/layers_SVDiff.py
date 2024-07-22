@@ -50,23 +50,23 @@ class Linear(nn.Linear, LoRALayer):
         # Actual trainable parameters
         if r > 0:
             self.lora = nn.Parameter(torch.zeros(min(in_features, out_features)))
-            
+            self.FLAG = 0
             self.weight.requires_grad = False
             # Freezing the pre-trained weight matrix
         if fan_in_fan_out:
             self.weight.data = self.weight.data.T
 
-
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         if self.r > 0 and not self.merged:
-            if torch.linalg.norm(self.lora) == 0:
-                t1, nm, t2 = torch.linalg.svd(self.weight, full_matrices=False)
-                self.nm = nm
-                self.vv = t1
-                self.uu = t2
-            result = F.linear(x, T(self.vv @ torch.relu(torch.diag(self.lora + self.nm)) @ self.uu), bias=self.bias)
+            if self.FLAG == 0:
+                self.FLAG = 1
+                weight_u, weight_sigma, weight_vt = torch.linalg.svd(self.weight, full_matrices=False)
+                self.weight_sigma = weight_sigma
+                self.weight_u = weight_u
+                self.weight_vt = weight_vt 
+            result = F.linear(x, T(self.weight_u @ torch.relu(torch.diag(self.lora + self.weight_sigma)) @ self.weight_vt), bias=self.bias)
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)

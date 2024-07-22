@@ -41,13 +41,13 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 ## <a id="news">💥 News</a>
 
+- **[2024.07.22]** 🔥🔥 Add Methods PISSA, MiLoRA and Spectral Adapter to Our Repo! 
 - **[2024.07.09]** 🔥🔥 Repository Constructed!
 
 ## 📝 Todo List
 
 - [ ] Task: Visual Instruction Tuning
 - [ ] Task: Image/Video-Text Understanding
-- [ ] Method: Spectral Adapter
 
 ## <a id="usage">🛠️ Usage</a>
 
@@ -94,7 +94,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <!-- Reconstruction-based-->
     <!-- Reconstruction-based-->
     <tr>
-      <td rowspan="8" style="border: 1px solid #ddd; padding: 8px;"><strong>Reconstruction</strong></td>
+      <td rowspan="10" style="border: 1px solid #ddd; padding: 8px;"><strong>Reconstruction</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>SAM-PARSER</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_SAMPARSER.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2308.14604">2024 AAAI</a></td>
@@ -134,33 +134,43 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./CR/peft/src/peft/tuners/p_tuning.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://aclanthology.org/2022.acl-short.8.pdf">2022 ACL</a></td>
     </tr>
+     <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong>PISSA</strong></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_PISSA.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2404.02948">2024 Arxiv</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong>MiLoRA</strong></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_MiLoRA.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2406.09044">2024 Arxiv</td>
+    </tr>
     <!-- Extension-based-->
     <!-- Extension-based-->
     <!-- Extension-based-->
     <tr>
       <td rowspan="8" style="border: 1px solid #ddd; padding: 8px;"><strong>Extension</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>LoRA</strong></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_lora.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2106.09685">2022 ICLR</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>AdaLoRA</strong></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_adalora.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/adalora.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://par.nsf.gov/servlets/purl/10471451">2023 ICLR</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>FLoRA</strong></td>
-    <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_flora.py">Code</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_FLoRA.py">Code</a></td>
     <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.14739">2024 Arxiv</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>MoSLoRA</strong></td>
-    <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_moslora.py">Code</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_MosLoRA.py">Code</a></td>
     <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/pdf/2406.11909">2024 Arxiv</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>TriLoRA</strong></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_trilora.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_TriLoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.11236">2024 Arxiv</a></td>
     </tr>
     <tr>
@@ -181,15 +191,20 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <!-- Combination-based-->
     <!-- Combination-based-->
     <tr>
-      <td rowspan="3" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
+      <td rowspan="4" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>DoRA</strong></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_dora.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_DoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2402.09353">2024 ICML</a></td>
     </tr>
      <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>SVDiff</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_SVDiff.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://openaccess.thecvf.com/content/ICCV2023/html/Han_SVDiff_Compact_Parameter_Space_for_Diffusion_Fine-Tuning_ICCV_2023_paper.html">2023 ICCV</a></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong> Spectral Adapter</strong></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_Spectral_Adapter.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.13952">2024 Arxiv</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><em>More algorithms and updates are continually added...</em></td>
@@ -234,6 +249,24 @@ If you find this repository useful, please consider giving it a star and citing 
   year={2024}
 }
 ```
+
+This repository also contains the code for our other projects. If you find these methods useful, please consider giving a star and citing them in your work.
+
+<details>
+ <summary>Other Projects</summary>
+
+### FLoRA: Low-Rank Core Space for N-dimension
+
+```bibtex
+@article{si2024flora,
+  title={FLoRA: Low-Rank Core Space for N-dimension},
+  author={Si, Chongjie* and Wang, Xuehui* and Yang, Xue and Xu, Zhengqin and Li, Qingyun and Dai, Jifeng and Qiao, Yu and Yang, Xiaokang and Shen, Wei},
+  journal={arXiv preprint arXiv:2405.14739},
+  year={2024}
+}
+```
+
+</details>
 
 ## 📄 License
 

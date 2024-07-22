@@ -49,7 +49,9 @@ class Linear(nn.Linear, LoRALayer):
         self.fan_in_fan_out = fan_in_fan_out
         # Actual trainable parameters
         if r > 0:
-            self.lora = nn.Parameter(torch.zeros(min(in_features, out_features)))
+            self.lora_A = nn.Parameter(torch.zeros((in_features, r)))
+            self.lora_B = nn.Parameter(torch.zeros((r, out_features)))
+            self.scaling = self.lora_alpha / self.r
             self.FLAG = 0
             self.weight.requires_grad = False
             # Freezing the pre-trained weight matrix
@@ -59,14 +61,21 @@ class Linear(nn.Linear, LoRALayer):
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.T if self.fan_in_fan_out else w
+        # We can not reproduce comparable results on NLU task.
+        # If you find bugs in this file, we would be honor to hear from you
         if self.r > 0 and not self.merged:
             if self.FLAG == 0:
                 self.FLAG = 1
                 weight_u, weight_sigma, weight_vt = torch.linalg.svd(self.weight, full_matrices=False)
-                self.lora = nn.Parameter(weight_sigma)
-                self.weight_u = weight_u
-                self.weight_vt = weight_vt 
-            result = F.linear(x, T(self.weight_u @ torch.diag(self.lora) @ self.weight_vt), bias=self.bias)
+                weight_sigma /= self.scaling
+                self.lora_A = nn.Parameter(weight_u[:, -self.r:] @ torch.diag(torch.sqrt(weight_sigma[-self.r:])))
+                self.lora_B = nn.Parameter(torch.diag(torch.sqrt(weight_sigma[-self.r:])) @ weight_vt[-self.r:, :])
+                self.weight_res = self.weight - self.lora_A.detach() @ self.lora_B.detach() * self.scaling
+                self.weight_res.requires_grad = False
+                
+            result = F.linear(x, T(self.weight_res.detach()), bias=self.bias)
+            result += (self.lora_dropout(x) @ (self.lora_A @ self.lora_B).T) * self.scaling
+
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)

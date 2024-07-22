@@ -49,9 +49,12 @@ class Linear(nn.Linear, LoRALayer):
         self.fan_in_fan_out = fan_in_fan_out
         # Actual trainable parameters
         if r > 0:
-            self.lora = nn.Parameter(torch.zeros(min(in_features, out_features)))
+            self.lora_A = nn.Parameter(torch.zeros((out_features, r)))
+            self.lora_B = nn.Parameter(torch.zeros((r, in_features)))
+            self.scaling = self.lora_alpha / self.r
             self.FLAG = 0
             self.weight.requires_grad = False
+            self.reset_parameters()
             # Freezing the pre-trained weight matrix
         if fan_in_fan_out:
             self.weight.data = self.weight.data.T
@@ -60,13 +63,22 @@ class Linear(nn.Linear, LoRALayer):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         if self.r > 0 and not self.merged:
+            # initialize
             if self.FLAG == 0:
                 self.FLAG = 1
                 weight_u, weight_sigma, weight_vt = torch.linalg.svd(self.weight, full_matrices=False)
-                self.lora = nn.Parameter(weight_sigma)
+                self.weight_sigma = weight_sigma
+                self.lora_A = nn.Parameter(self.weight.new_zeros(self.lora_A.shape))
                 self.weight_u = weight_u
                 self.weight_vt = weight_vt 
-            result = F.linear(x, T(self.weight_u @ torch.diag(self.lora) @ self.weight_vt), bias=self.bias)
+                
+            result = F.linear(x, T(self.weight), bias=self.bias)
+            result += (self.lora_dropout(x) @ (
+                self.lora_A @ torch.diag(self.weight_sigma[:self.r]) @ self.lora_B + 
+                self.weight_u[:, :self.r] @ torch.diag(self.weight_sigma[:self.r]) @ self.lora_B +
+                self.lora_A @ torch.diag(self.weight_sigma[:self.r]) @ self.weight_vt[:self.r, :]
+                ).T) * self.scaling
+
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)
