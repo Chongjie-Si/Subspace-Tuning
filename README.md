@@ -41,13 +41,13 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 ## <a id="news">💥 News</a>
 
+- **[2024.08.18]** 🔥🔥 Add Math Reasoning Tasks to Our Repo! 
 - **[2024.07.22]** 🔥🔥 Add Methods PISSA, MiLoRA and Spectral Adapter to Our Repo! 
 - **[2024.07.09]** 🔥🔥 Repository Constructed!
 
 ## 📝 Todo List
 
-- [ ] Task: Visual Instruction Tuning
-- [ ] Task: Image/Video-Text Understanding
+- [ ] Fair Comparaison Setup
 
 ## <a id="usage">🛠️ Usage</a>
 
@@ -69,7 +69,8 @@ We support several tasks including:
 - Natural Language Understanding ([NLU](./NLU/))
 - Natural Language Generation ([NLG](./NLG_QA/))
 - Question Answering ([QA](./NLG_QA/))
-- Commonsense Reasoning ([CR](./CR/))
+- Commonsense Reasoning ([CR](./CR_MR/))
+- Math Reasoning ([MR](./CR_MR/))
 - ...
 
 ## <a id="algorithms">🔍 Algorithms</a>

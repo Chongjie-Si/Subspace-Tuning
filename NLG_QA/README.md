@@ -1,4 +1,4 @@
-# Adapating Pretrained Models with Various Subspace Tuning Methods for NLG and QA tasks
+# Adapating Pretrained Models for NLG and QA tasks
 
 This folder contains the implementations for NLG and QA tasks.
 

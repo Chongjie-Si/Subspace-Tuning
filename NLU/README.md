@@ -1,4 +1,4 @@
-# Adapating Pretrained Models with Various Subspace Tuning Methods for NLU Task
+# Adapating Pretrained Models for NLU Task
 
 This folder contains the implementations for NLU task.
 
