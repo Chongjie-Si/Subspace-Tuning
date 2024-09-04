@@ -19,6 +19,8 @@ To address these issues, we have decided to make a preliminary attempt. We will 
 In conclusion, we will not report any results that we are unable to reproduce. We will also provide the weights corresponding to the CR results if they are reported in our paper.
 We hope that our attempt can assist researchers and contribute to the advancement of this field.
 
+## Results
+
 <table>
     <thead>
         <tr>
@@ -357,3 +359,10 @@ We hope that our attempt can assist researchers and contribute to the advancemen
     </tbody>
 </table>
 
+## Download for Weights
+
+We provide some weights of our work.
+| Method | Links |
+| -- | -- |
+| LoRA-Dash | [Google Drive](https://drive.google.com/drive/folders/1T6fVhGgO6mhjAyS8bJ7lDvWGgQGkMX6e?usp=sharing) |
+| DoRA | [Github](https://github.com/NVlabs/DoRA/tree/main/commonsense_reasoning) |

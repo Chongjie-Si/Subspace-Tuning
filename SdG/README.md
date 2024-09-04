@@ -54,6 +54,10 @@ After training, run the following commands to generate the images:
 python infer.py
 ```
 
+## GPU Memory
+
+Considering that you may have different computing resources, we have tested that this task can be conducted on one RTX 3090 GPU.
+
 ## Q&A
 
 If you encounter any issues, please refer to this link: [huggingface/diffusers/examples](https://github.com/huggingface/diffusers/blob/main/examples/dreambooth/README_sdxl.md). It covers the majority of problems you may encounter. Additionally, you are also welcome to contact us by submitting an [issue](https://github.com/Chongjie-Si/Subspace-Tuning/issues) or via [email](mailto:chongjiesi@sjtu.edu.cn).
