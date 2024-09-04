@@ -7,7 +7,7 @@
 # license agreement from NVIDIA CORPORATION is strictly prohibited.
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset boolq \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -15,7 +15,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset piqa \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -23,7 +23,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset social_i_qa \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -31,7 +31,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset hellaswag \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -39,7 +39,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset winogrande \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -47,7 +47,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset ARC-Challenge \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -55,7 +55,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset ARC-Easy \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \
@@ -63,7 +63,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 
 CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
     --model LLaMA3-8B \
-    --adapter DoRA \
+    --adapter LoRA \
     --dataset openbookqa \
     --base_model 'meta-llama/Meta-Llama-3-8B' \
     --batch_size 1 \

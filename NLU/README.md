@@ -1,4 +1,4 @@
-# Adapating Pretrained Models for NLU Task
+# Adapting Pre-trained Models for NLU Task
 
 This folder contains the implementations for NLU task.
 
@@ -43,7 +43,7 @@ pip install -e ../loralib/
 - [examples/](./examples/) contains the training codes.
 - [scripts/](./scripts/) contains the training scripts for different datasets.
 
-## Adapt Pretrained Models on GLUE benchmark
+## Adapting Pre-trained Models on GLUE benchmark
 
 <details>
   <summary><strong><span style="font-size: 1.2em;">Example: Adapting RoBERTa-base with BitFit on the MNLI Dataset</span></strong></summary>
@@ -67,9 +67,9 @@ examples/text-classification/run_glue.py \
 --overwrite_output_dir
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
-+ `model_name_or_path`: Apply pretrained models. `roberta-base` for RoBERTa-base (125M).
++ `model_name_or_path`: Apply pre-trained models. `roberta-base` for RoBERTa-base (125M).
 + `apply_bitfit`: Apply BitFit for the model.
 
 </details>
@@ -97,11 +97,11 @@ examples/text-classification/run_glue.py \
 --overwrite_output_dir
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
-+ `model_name_or_path`: Apply pretrained models. `microsoft/deberta-v3-base` for DeBERTaV3-base (184M).
++ `model_name_or_path`: Apply pre-trained models. `microsoft/deberta-v3-base` for DeBERTaV3-base (184M).
 + `apply_adapter`: Apply Adapter for the model.
-+ `adapter_type`: Specify the type of Adapter. `houlsby` for Houslby Adapter and `pfeiffer` for Pfeiffer Adapter.
++ `adapter_type`: Specify the type of Adapter. `houlsby` for Houlsby Adapter and `pfeiffer` for Pfeiffer Adapter.
 + `adapter_size`: Specify the size of Adapter.
 
 </details>
@@ -134,9 +134,9 @@ examples/text-classification/run_glue.py \
 --overwrite_output_dir
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
-+ `model_name_or_path`: Apply pretrained models. `roberta-large` for RoBERTa-Large (355M).
++ `model_name_or_path`: Apply pre-trained models. `roberta-large` for RoBERTa-Large (355M).
 + `apply_lora, apply_adalora`: Apply AdaLoRA for the model.
 + `lora_type`: `svd` for usage of SVDLinear in [adalora](../loralib/loralib/adalora.py).
 + Other parameters: See the hyper-parameter settings in [AdaLoRA](https://github.com/QingruZhang/AdaLoRA/tree/main).
@@ -168,7 +168,7 @@ examples/text-classification/run_glue.py \
 --overwrite_output_dir 
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
 + `apply_lora`: Apply LoRA and other methods for the model.
 + `lora_type`: `frd` for the utilization of the Linear module in [layers](../loralib/loralib/layers.py). If an alternative approach is preferred, you may replace the contents of [layers](../loralib/loralib/layers.py) directly with the contents from other files, such us [TriLoRA](../loralib/loralib/layers_TriLoRA.py).

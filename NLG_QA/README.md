@@ -1,4 +1,4 @@
-# Adapating Pretrained Models for NLG and QA tasks
+# Adapting Pre-trained Models for NLG and QA tasks
 
 This folder contains the implementations for NLG and QA tasks.
 
@@ -43,7 +43,7 @@ pip install -e ../loralib/
 - [examples/](./examples/) contains the training codes.
 - [scripts/](./scripts/) contains the training scripts for different datasets.
 
-## Adapt Pretrained Models on NLG benchmark
+## Adapting Pre-trained Models on NLG benchmark
 
 <details>
   <summary><strong><span style="font-size: 1.2em;">Example: Adapting BART with AdaLoRA on Xsum Dataset</span></strong></summary>
@@ -72,7 +72,7 @@ examples/summarization/run_summarization_no_trainer.py \
 --output_dir ./output/bart-large/xsum 
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
 + `apply_lora`: Apply LoRA to the target model.
 + `lora_type`: Config the low-rank parameterization, `frd` for low-rank decomposition and `svd` for SVD decomposition. Use `svd` for AdaLoRA and `frd` for LoRA or other methods.
@@ -82,9 +82,9 @@ examples/summarization/run_summarization_no_trainer.py \
 + `target_rank`: The average target rank of final incremental matrices, i.e. the average number of singular values per matrix.
 + `init_warmup`: The steps of initial warmup for budget scheduler.
 + `final_warmup`: The steps of final warmup for budget scheduler.
-+ `mask_interval`: The time internval between two budget allocations.
-+ `beta1` and `beta2`: The coefficient of exponentional moving average when updating importance scores.
-+ `reg_orth_coef`: The weight of orthongonal regularization.
++ `mask_interval`: The time interval between two budget allocations.
++ `beta1` and `beta2`: The coefficient of exponential moving average when updating importance scores.
++ `reg_orth_coef`: The weight of orthogonal regularization.
 
 You can see [here](../NLU/README.md) for more explanations on the hyper-parameters.
 
@@ -118,7 +118,7 @@ examples/summarization/run_summarization_no_trainer.py \
 
 </details>
 
-## Adapt Pretrained Models on QA benchmark
+## Adapting Pre-trained Models on QA benchmark
 
 <details>
   <summary><strong><span style="font-size: 1.2em;">Example: Adapting DeBERTaV3-base with AdaLoRA on SQuADv2.0 Dataset</span></strong></summary>

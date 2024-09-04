@@ -1,5 +1,5 @@
 
-# Adapating Pretrained Models for Commonsense Reasoning and Math Reasoning Tasks
+# Adapting Pre-trained Models for Commonsense Reasoning and Math Reasoning Tasks
 
 This folder contains the implementations for commonsense reasoning and math reasoning tasks.
 
@@ -31,10 +31,10 @@ pip install -r requirements.txt
 ## Adapting LLAMA / LLAMA2 / LLAMA3 for CR Tasks
 
 <details>
-  <summary><strong><span style="font-size: 1.2em;">Example: Finetuning and Evaluating LLAMA with LoRA</span></strong></summary>
+  <summary><strong><span style="font-size: 1.2em;">Example: Fine-tuning and Evaluating LLAMA with LoRA</span></strong></summary>
 
 ```bash
-# Finetuning
+# Fine-tuning
 # llama.sh
 
 CUDA_VISIBLE_DEVICES=$4 python finetune.py \
@@ -52,14 +52,14 @@ CUDA_VISIBLE_DEVICES=$4 python finetune.py \
 sh llama.sh 32 64 ./finetune/lora_r=32/ 0
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
 - `$1`: the rank of LoRA.
 - `$2`: the corresponding alpha of LoRA.
 - `$3`: where to save the fine-tuned model.
 - `$4`: GPU number.
-- `--adapter_name`: the method used for finetuning.
-- `--target_modules`: which modules for finetuning.
+- `--adapter_name`: the method used for fine-tuning.
+- `--target_modules`: which modules for fine-tuning.
 
 ```bash
 # Evaluating
@@ -81,7 +81,7 @@ CUDA_VISIBLE_DEVICES=$2 python commonsense_evaluate.py \
 sh llama_eval.sh ./finetune/lora_r=32/ 0
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
 - `$1`: the location of fine-tuned weights
 - `$2`: GPU number
@@ -89,7 +89,7 @@ sh llama_eval.sh ./finetune/lora_r=32/ 0
  </details>
 
 <details>
-  <summary><strong><span style="font-size: 1.2em;">Example: Finetuning and Evaluating LLAMA2 with DoRA</span></strong></summary>
+  <summary><strong><span style="font-size: 1.2em;">Example: Fine-tuning and Evaluating LLAMA2 with DoRA</span></strong></summary>
 
 ```bash
 sh llama2.sh 32 64 ./finetune/dora_r=32/ 0
@@ -99,26 +99,30 @@ sh llama2.sh 32 64 ./finetune/dora_r=32/ 0
 sh llama2_eval.sh ./finetune/dora_r=32/ 0
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
 
-See first example for details on hyperparameters.
+See first example for details on hyper-parameters.
 
  </details>
 
 <details>
-  <summary><strong><span style="font-size: 1.2em;">Example: Finetuning and Evaluating LLAMA3 with LoRA</span></strong></summary>
+  <summary><strong><span style="font-size: 1.2em;">Example: Fine-tuning and Evaluating LLAMA3 with LoRA-Dash</span></strong></summary>
+
+First, please replace the codes in [lora.py](./peft/src/peft/tuners/lora.py) with those in [lora-dash.py](./peft/src/peft/tuners/lora-dash.py). Then, run the scripts as follows:
 
 ```bash
-sh llama3.sh 32 64 ./finetune/lora_r=32/ 0
+sh llama3.sh 32 64 ./finetune/lora-dash_r=32/ 0
 ```
 
 ```bash
-sh llama3_eval.sh ./finetune/lora_r=32/ 0
+sh llama3_eval.sh ./finetune/lora-dash_r=32/ 0
 ```
 
-<strong><span style="font-size: 1em;">Hyperparameter Setup</span></strong>
+For other methods, please follow a similar pipeline.
 
-See first example for details on hyperparameters.
+<strong><span style="font-size: 1em;">Hyper-parameter Setup</span></strong>
+
+See first example for details on hyper-parameters.
 
  </details>
 

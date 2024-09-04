@@ -41,13 +41,14 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 ## <a id="news">💥 News</a>
 
-- **[2024.08.18]** 🔥🔥 Add Math Reasoning Tasks to Our Repo! 
-- **[2024.07.22]** 🔥🔥 Add Methods PISSA, MiLoRA and Spectral Adapter to Our Repo! 
+- **[2024.09.04]** 🔥🔥 Add ***Method*** LoRA-Dash and ***Task*** Subject-driven Generation to Our Repo!
+- **[2024.08.18]** 🔥🔥 Add ***Task*** Math Reasoning to Our Repo!
+- **[2024.07.22]** 🔥🔥 Add ***Methods*** PISSA, MiLoRA and Spectral Adapter to Our Repo!
 - **[2024.07.09]** 🔥🔥 Repository Constructed!
 
 ## 📝 Todo List
 
-- [ ] Fair Comparaison Setup
+- [ ] Fair Comparison Setup
 
 ## <a id="usage">🛠️ Usage</a>
 
@@ -71,11 +72,12 @@ We support several tasks including:
 - Question Answering ([QA](./NLG_QA/))
 - Commonsense Reasoning ([CR](./CR_MR/))
 - Math Reasoning ([MR](./CR_MR/))
+- Subject-driven Generation ([SdG](./SdG/))
 - ...
 
 ## <a id="algorithms">🔍 Algorithms</a>
 
-Based on subspace tuning theroy, PEFT methods are classified into three categories: reconstruction-based, extension-based and combination-based.
+Based on subspace tuning theory, PEFT methods are classified into three categories: reconstruction-based, extension-based and combination-based.
 
 ![Method](./resources/method.png)
 
@@ -192,7 +194,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <!-- Combination-based-->
     <!-- Combination-based-->
     <tr>
-      <td rowspan="4" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
+      <td rowspan="5" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>DoRA</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_DoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2402.09353">2024 ICML</a></td>
@@ -208,6 +210,11 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.13952">2024 Arxiv</a></td>
     </tr>
     <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoRA-Dash</strong></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA-Dash.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2409.01035">2024 Arxiv</a></td>
+    </tr>
+    <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><em>More algorithms and updates are continually added...</em></td>
       <td style="border: 1px solid #ddd; padding: 8px;">N/A</td>
       <td style="border: 1px solid #ddd; padding: 8px;">N/A</td>
@@ -216,7 +223,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
 </table>
 </div>
 
-We have also tested the performance of some algorithms on NLU tasks.
+We have also tested the performance of some algorithms on NLU and [CR](./Fair_Comparison/) tasks.
 
 ![result](./resources/result.png)
 
@@ -243,10 +250,9 @@ If you find this repository useful, please consider giving it a star and citing 
 
 ```bibtex
 @article{si2024see,
-  title={See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition}, 
-  author={Chongjie Si and Xiaokang Yang and Wei Shen},
+  title={See Further for Parameter Efficient Fine-tuning by Standing on the Shoulders of Decomposition},
+  author={Si, Chongjie and Yang, Xiaokang and Shen, Wei},
   journal={arXiv preprint arXiv:2407.05417},
-  url={arxiv.org/abs/2407.05417},
   year={2024}
 }
 ```
@@ -263,6 +269,17 @@ This repository also contains the code for our other projects. If you find these
   title={FLoRA: Low-Rank Core Space for N-dimension},
   author={Si, Chongjie* and Wang, Xuehui* and Yang, Xue and Xu, Zhengqin and Li, Qingyun and Dai, Jifeng and Qiao, Yu and Yang, Xiaokang and Shen, Wei},
   journal={arXiv preprint arXiv:2405.14739},
+  year={2024}
+}
+```
+
+### Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning
+
+```bibtex
+@article{si2024unleashing,
+  title={Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning},
+  author={Si, Chongjie* and Shi, Zhiyi* and Zhang, Shifan and Yang, Xiaokang and Pfister, Hanspeter and Shen, Wei},
+  journal={arXiv preprint arXiv:2409.01035},
   year={2024}
 }
 ```
