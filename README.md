@@ -39,6 +39,13 @@ Welcome to our repository, which contains a diverse collection of Subspace Tunin
 
 We aim to provide a comprehensive resource for researchers and practitioners in this field, and facilitate easy integration into your projects. Whether you are here to find resources for your projects or to contribute, we hope this repository will be a valuable and inspiring part of your research journey.
 
+### Information Box
+
+This repository also contains some of the other projects we have worked on, which might have led you here.
+
+- [**LoRA-Dash**](https://arxiv.org/abs/2409.01035v1): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
+- [**FLoRA**](https://arxiv.org/abs/2405.14739): FLoRA: Low-Rank Core Space for N-dimension.
+
 ## <a id="news">💥 News</a>
 
 - **[2024.09.04]** 🔥🔥 Add ***Method*** LoRA-Dash and ***Task*** Subject-driven Generation to Our Repo!
@@ -48,7 +55,7 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 ## 📝 Todo List
 
-- [ ] Fair Comparison Setup
+- Nothing to do yet.
 
 ## <a id="usage">🛠️ Usage</a>
 
@@ -257,7 +264,7 @@ If you find this repository useful, please consider giving it a star and citing 
 }
 ```
 
-This repository also contains the code for our other projects. If you find these methods useful, please consider giving a star and citing them in your work.
+**This repository also contains the code for our other projects. If you find these methods useful, please consider giving a star and citing them in your work.**
 
 <details>
  <summary>Other Projects</summary>
