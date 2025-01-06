@@ -43,8 +43,8 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 This repository also contains some of the other projects we have worked on, which might have led you here.
 
-- [**LoRA-Dash**](https://arxiv.org/abs/2409.01035v1): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
-- [**FLoRA**](https://arxiv.org/abs/2405.14739): FLoRA: Low-Rank Core Space for N-dimension.
+- [**LoRA-Dash**](https://chongjiesi.site/full-publications/2024-arxiv-lora-dash/): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
+- [**FLoRA**](https://chongjiesi.site/full-publications/2024-arxiv-flora/): FLoRA: Low-Rank Core Space for N-dimension.
 
 ## <a id="news">💥 News</a>
 
