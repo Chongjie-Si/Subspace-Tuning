@@ -147,7 +147,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
      <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>PISSA</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_PISSA.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2404.02948">2024 Arxiv</td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2404.02948">2024 NIPS</td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>MiLoRA</strong></td>
@@ -176,7 +176,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>MoSLoRA</strong></td>
     <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_MosLoRA.py">Code</a></td>
-    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/pdf/2406.11909">2024 Arxiv</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/pdf/2406.11909">2024 EMNLP</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>TriLoRA</strong></td>
@@ -214,7 +214,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong> Spectral Adapter</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_Spectral_Adapter.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.13952">2024 Arxiv</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.13952">2024 NIPS</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoRA-Dash</strong></td>
@@ -266,10 +266,7 @@ If you find this repository useful, please consider giving it a star and citing 
 
 **This repository also contains the code for our other projects. If you find these methods useful, please consider giving a star and citing them in your work.**
 
-<details>
- <summary>Other Projects</summary>
-
-### FLoRA: Low-Rank Core Space for N-dimension
+#### FLoRA: Low-Rank Core Space for N-dimension
 
 ```bibtex
 @article{si2024flora,
@@ -280,7 +277,7 @@ If you find this repository useful, please consider giving it a star and citing 
 }
 ```
 
-### Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning
+#### Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning
 
 ```bibtex
 @article{si2024unleashing,
