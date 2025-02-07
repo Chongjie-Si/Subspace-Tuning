@@ -44,7 +44,7 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 This repository also contains some of the other projects we have worked on, which might have led you here.
 
 - [**LoRA-Dash**](https://chongjiesi.site/full-publications/2024-arxiv-lora-dash/): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
-- [**FLoRA**](https://chongjiesi.site/full-publications/2024-arxiv-flora/): FLoRA: Low-Rank Core Space for N-dimension.
+- [**FLoRA**](https://chongjiesi.site/full-publications/2024-arxiv-flora/): Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning.
 
 ## <a id="news">💥 News</a>
 
@@ -171,7 +171,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>FLoRA</strong></td>
     <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_FLoRA.py">Code</a></td>
-    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.14739">2024 Arxiv</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://openreview.net/forum?id=OALIb8oNfl&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions)">2025 ICLR</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>MoSLoRA</strong></td>
@@ -219,7 +219,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoRA-Dash</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA-Dash.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2409.01035">2024 Arxiv</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://openreview.net/forum?id=RYrJqz44p4&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions)">2025 ICLR</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><em>More algorithms and updates are continually added...</em></td>
@@ -229,6 +229,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
   </tbody>
 </table>
 </div>
+
 
 We have also tested the performance of some algorithms on NLU and [CR](./Fair_Comparison/) tasks.
 
@@ -269,22 +270,26 @@ If you find this repository useful, please consider giving it a star and citing 
 #### FLoRA: Low-Rank Core Space for N-dimension
 
 ```bibtex
-@article{si2024flora,
-  title={FLoRA: Low-Rank Core Space for N-dimension},
-  author={Si, Chongjie* and Wang, Xuehui* and Yang, Xue and Xu, Zhengqin and Li, Qingyun and Dai, Jifeng and Qiao, Yu and Yang, Xiaokang and Shen, Wei},
-  journal={arXiv preprint arXiv:2405.14739},
-  year={2024}
+@inproceedings{
+si2025maintaining,
+title={Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning},
+author={Chongjie Si and Xuehui Wang and Xue Yang and Zhengqin Xu and Qingyun Li and Jifeng Dai and Yu Qiao and Xiaokang Yang and Wei Shen},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=OALIb8oNfl}
 }
 ```
 
 #### Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning
 
 ```bibtex
-@article{si2024unleashing,
-  title={Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning},
-  author={Si, Chongjie* and Shi, Zhiyi* and Zhang, Shifan and Yang, Xiaokang and Pfister, Hanspeter and Shen, Wei},
-  journal={arXiv preprint arXiv:2409.01035},
-  year={2024}
+@inproceedings{
+si2025unleashing,
+title={Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning},
+author={Chongjie Si and Zhiyi Shi and Shifan Zhang and Xiaokang Yang and Hanspeter Pfister and Wei Shen},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=RYrJqz44p4}
 }
 ```
 
