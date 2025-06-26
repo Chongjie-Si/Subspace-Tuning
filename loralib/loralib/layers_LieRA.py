@@ -1,3 +1,7 @@
+#  ------------------------------------------------------------------------------------------
+#  Copyright (c) Microsoft Corporation. All rights reserved.
+#  Licensed under the MIT License (MIT). See LICENSE in the repo root for license information.
+#  ------------------------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,7 +9,7 @@ import torch.nn.functional as F
 import math
 from typing import Optional, List
 
-class LoRALayer:
+class LoRALayer():
     def __init__(
         self, 
         r: int, 
@@ -15,14 +19,18 @@ class LoRALayer:
     ):
         self.r = r
         self.lora_alpha = lora_alpha
+        # Optional dropout
         if lora_dropout > 0.:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
         else:
             self.lora_dropout = lambda x: x
+        # Mark the weight as unmerged
         self.merged = False
         self.merge_weights = merge_weights
+        
 
 class Linear(nn.Linear, LoRALayer):
+    # LoRA implemented in a dense layer
     def __init__(
         self, 
         in_features: int, 
@@ -30,7 +38,7 @@ class Linear(nn.Linear, LoRALayer):
         r: int = 0, 
         lora_alpha: int = 1, 
         lora_dropout: float = 0.,
-        fan_in_fan_out: bool = False,
+        fan_in_fan_out: bool = False, # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
         merge_weights: bool = True,
         **kwargs
     ):
@@ -39,10 +47,13 @@ class Linear(nn.Linear, LoRALayer):
                            merge_weights=merge_weights)
 
         self.fan_in_fan_out = fan_in_fan_out
+        # Actual trainable parameters
         if r > 0:
             self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
             self.lora_B = nn.Parameter(self.weight.new_zeros((out_features, r)))
             self.scaling = self.lora_alpha / self.r
+        
+            # Freezing the pre-trained weight matrix
             self.weight.requires_grad = False
         self.reset_parameters()
         if fan_in_fan_out:
@@ -51,43 +62,16 @@ class Linear(nn.Linear, LoRALayer):
     def reset_parameters(self):
         nn.Linear.reset_parameters(self)
         if hasattr(self, 'lora_A'):
-            if self.r > 0:
-                # 获取权重矩阵，考虑fan_in_fan_out的影响
-                if self.fan_in_fan_out:
-                    W = self.weight.data.T.clone()  # 转换为(out_features, in_features)
-                else:
-                    W = self.weight.data.clone()
-                
-                # 执行SVD分解
-                U, S, Vh = torch.linalg.svd(W, full_matrices=False)
-                U_r = U[:, :self.r]
-                S_r = S[:self.r]
-                Vh_r = Vh[:self.r, :]
-                
-                # 计算缩放因子
-                scale_factor = self.scaling
-                
-                # 分解为B和A
-                sqrt_S_scaled = torch.sqrt(S_r / scale_factor)
-                B = U_r * sqrt_S_scaled.unsqueeze(0)
-                A = sqrt_S_scaled.unsqueeze(1) * Vh_r
-                
-                # 初始化lora_A和lora_B
-                self.lora_B.data = B
-                self.lora_A.data = A
-                
-                # 计算delta_W并调整原始权重
-                delta_W = (B @ A) * scale_factor
-                if self.fan_in_fan_out:
-                    delta_W = delta_W.T  # 转换为(in_features, out_features)
-                self.weight.data -= delta_W
+            # initialize A the same way as the default for nn.Linear and B to zero
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B)
 
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         if self.r > 0 and not self.merged:
             result = F.linear(x, T(self.weight), bias=self.bias)
-            result += self.lora_dropout(x) @ (self.lora_A.T @ self.lora_B.T) * self.scaling
+            result += self.lora_dropout(x) @ (self.weight * (self.lora_B @ self.lora_A * self.scaling)).T
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)

@@ -185,6 +185,19 @@ We hope that our attempt can assist researchers and contribute to the advancemen
             <td>74.7</td>
         </tr>
         <tr>
+            <td>LieRA<sub>r=32</sub></td>
+            <td>+ 0</td>
+            <td>68.2</td>
+            <td>80.3</td>
+            <td>76.8</td>
+            <td>79.0</td>
+            <td>81.5</td>
+            <td>81.4</td>
+            <td>64.1</td>
+            <td>78.4</td>
+            <td>76.2</td>
+        </tr>
+        <tr>
             <td>AdaLoRA<sub>r=32</sub></td>
             <td>+ 5.1k</td>
             <td>69.1</td>
@@ -329,6 +342,19 @@ We hope that our attempt can assist researchers and contribute to the advancemen
             <td>75.5</td>
             <td>81.8</td>
             <td>81.9</td>
+        </tr>
+        <tr>
+            <td>LieRA<sub>r=32</sub></td>
+            <td>+ 0</td>
+            <td>74.3</td>
+            <td>88.7</td>
+            <td>71.3</td>
+            <td>95.4</td>
+            <td>85.5</td>
+            <td>80.5</td>
+            <td>80.3</td>
+            <td>86.2</td>
+            <td>85.3</td>
         </tr>
         <tr>
             <td>DoRA<sub>r=32</sub></td>

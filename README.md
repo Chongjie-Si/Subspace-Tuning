@@ -43,11 +43,13 @@ We aim to provide a comprehensive resource for researchers and practitioners in 
 
 This repository also contains some of the other projects we have worked on, which might have led you here.
 
-- [**LoRA-Dash**](https://chongjiesi.site/full-publications/2024-arxiv-lora-dash/): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
-- [**FLoRA**](https://chongjiesi.site/full-publications/2024-arxiv-flora/): Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning.
+- [**LoRA-Dash**](https://chongjiesi.site/full-publications/2025-iclr-lora-dash/): Unleashing the Power of Task-Specific Directions in Parameter Efficient Fine-tuning.
+- [**FLoRA**](https://chongjiesi.site/full-publications/2025-iclr-flora/): Maintaining Structural Integrity in Parameter Spaces for Parameter Efficient Fine-tuning.
+- [**LieRA**](https://chongjiesi.site/full-publications/2025-iccv-liera/): Generalized Tensor-based Parameter-Efficient Fine-Tuning via Lie Group Transformations.
 
 ## <a id="news">💥 News</a>
 
+- **[2025.06.26]** 🔥🔥 Add ***Method*** LieRA to Our Repo!
 - **[2024.09.04]** 🔥🔥 Add ***Method*** LoRA-Dash and ***Task*** Subject-driven Generation to Our Repo!
 - **[2024.08.18]** 🔥🔥 Add ***Task*** Math Reasoning to Our Repo!
 - **[2024.07.22]** 🔥🔥 Add ***Methods*** PISSA, MiLoRA and Spectral Adapter to Our Repo!
@@ -158,7 +160,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <!-- Extension-based-->
     <!-- Extension-based-->
     <tr>
-      <td rowspan="8" style="border: 1px solid #ddd; padding: 8px;"><strong>Extension</strong></td>
+      <td rowspan="9" style="border: 1px solid #ddd; padding: 8px;"><strong>Extension</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>LoRA</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2106.09685">2022 ICLR</a></td>
@@ -171,7 +173,12 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>FLoRA</strong></td>
     <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_FLoRA.py">Code</a></td>
-    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://openreview.net/forum?id=OALIb8oNfl&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions)">2025 ICLR</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2405.14739">2025 ICLR</a></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong>LieRA</strong></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LieRA.py">Code</a></td>
+    <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2504.00851">2025 ICCV</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>MoSLoRA</strong></td>
@@ -219,7 +226,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoRA-Dash</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA-Dash.py">Code</a></td>
-      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://openreview.net/forum?id=RYrJqz44p4&referrer=%5BAuthor%20Console%5D(%2Fgroup%3Fid%3DICLR.cc%2F2025%2FConference%2FAuthors%23your-submissions)">2025 ICLR</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2409.01035">2025 ICLR</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><em>More algorithms and updates are continually added...</em></td>
