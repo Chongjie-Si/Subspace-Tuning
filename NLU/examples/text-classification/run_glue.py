@@ -45,7 +45,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint, is_main_process
 from transformers.utils import check_min_version
 from loralib import RankAllocator 
-
+from loralib.flexlora import RankAllocator as FlexRankAllocator
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
@@ -237,6 +237,10 @@ class ModelArguments:
         metadata={"help": "Token Masking Probability"},
     )
     apply_adalora: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether to apply rank selector or not."},
+    )
+    apply_flexlora: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether to apply rank selector or not."},
     )
@@ -639,6 +643,15 @@ def main():
             beta1=model_args.beta1, 
             beta2=model_args.beta2, 
             target_total_rank=model_args.target_total_rank, 
+            tb_writter=tb_writter, 
+            tb_writter_loginterval=model_args.tb_writter_loginterval,
+        )
+    elif model_args.lora_type == "svd" and model_args.apply_flexlora:
+        rankallocator = FlexRankAllocator(
+            model, 
+            init_warmup=model_args.init_warmup, 
+            final_warmup=model_args.final_warmup,
+            mask_interval=model_args.mask_interval, 
             tb_writter=tb_writter, 
             tb_writter_loginterval=model_args.tb_writter_loginterval,
         )

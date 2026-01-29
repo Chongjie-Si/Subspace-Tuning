@@ -36,7 +36,7 @@ from hashlib import sha256
 from pathlib import Path
 from types import ModuleType
 from typing import Any, BinaryIO, Dict, List, Optional, Tuple, Union
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from zipfile import ZipFile, is_zipfile
 
 import numpy as np
@@ -1311,7 +1311,7 @@ def get_from_cache(
             # and ensure we download the exact atomic version even if it changed
             # between the HEAD and the GET (unlikely, but hey).
             if 300 <= r.status_code <= 399:
-                url_to_download = r.headers["Location"]
+                url_to_download = urljoin(url, r.headers["Location"])
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             # etag is already None
             pass
