@@ -47,6 +47,7 @@ bash train.sh
 - `instance_prompt`: the prompt for the input images.
 - `validation_prompt`: the prompt for validation.
 - `lora_use_dash`: whether to use LoRA-Dash.
+- `lora_use_map`: whether to use LoMAP.
 
 After training, run the following commands to generate the images:
 

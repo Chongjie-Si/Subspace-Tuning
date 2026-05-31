@@ -12,7 +12,7 @@ from .layers import LoRALayer
 
 def mark_only_lora_as_trainable(model: nn.Module, bias: str = 'none') -> None:
     for n, p in model.named_parameters():
-        if 'lora_' not in n:
+        if 'lora_' not in n and 'map_' not in n:
             p.requires_grad = False
     if bias == 'none':
         return
@@ -33,13 +33,15 @@ def mark_only_lora_as_trainable(model: nn.Module, bias: str = 'none') -> None:
 def lora_state_dict(model: nn.Module, bias: str = 'none') -> Dict[str, torch.Tensor]:
     my_state_dict = model.state_dict()
     if bias == 'none':
-        return {k: my_state_dict[k] for k in my_state_dict if 'lora_' in k}
+        return {k: my_state_dict[k] for k in my_state_dict if 'lora_' in k or 'map_' in k}
     elif bias == 'all':
-        return {k: my_state_dict[k] for k in my_state_dict if 'lora_' in k or 'bias' in k}
+        return {k: my_state_dict[k] for k in my_state_dict if 'lora_' in k or 'map_' in k or 'bias' in k}
     elif bias == 'lora_only':
         to_return = {}
         for k in my_state_dict:
-            if 'lora_' in k:
+            if 'map_' in k:
+                to_return[k] = my_state_dict[k]
+            elif 'lora_' in k:
                 to_return[k] = my_state_dict[k]
                 bias_name = k.split('lora_')[0]+'bias'
                 if bias_name in my_state_dict:

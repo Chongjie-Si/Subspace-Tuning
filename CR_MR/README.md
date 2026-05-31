@@ -61,6 +61,8 @@ sh llama.sh 32 64 ./finetune/lora_r=32/ 0
 - `--adapter_name`: the method used for fine-tuning.
 - `--target_modules`: which modules for fine-tuning.
 
+To train LoMAP, use the same command with `--adapter_name lomap`.
+
 ```bash
 # Evaluating
 # part of llama_eval.sh

@@ -44,13 +44,15 @@ def get_peft_model_state_dict(model, state_dict=None):
         # to directly with the state dict which is necessary when using DeepSpeed or FSDP
         bias = model.peft_config.bias
         if bias == "none":
-            to_return = {k: state_dict[k] for k in state_dict if "lora_" in k}
+            to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "map_" in k}
         elif bias == "all":
-            to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "bias" in k}
+            to_return = {k: state_dict[k] for k in state_dict if "lora_" in k or "map_" in k or "bias" in k}
         elif bias == "lora_only":
             to_return = {}
             for k in state_dict:
-                if "lora_" in k:
+                if "map_" in k:
+                    to_return[k] = state_dict[k]
+                elif "lora_" in k:
                     to_return[k] = state_dict[k]
                     bias_name = k.split("lora_")[0] + "bias"
                     if bias_name in state_dict:

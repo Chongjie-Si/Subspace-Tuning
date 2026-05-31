@@ -208,7 +208,7 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
     <!-- Combination-based-->
     <!-- Combination-based-->
     <tr>
-      <td rowspan="5" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
+      <td rowspan="6" style="border: 1px solid #ddd; padding: 8px;"><strong>Combination</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><strong>DoRA</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_DoRA.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2402.09353">2024 ICML</a></td>
@@ -227,6 +227,11 @@ We implement different methods mainly in [loralib/](./loralib/loralib/).
       <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoRA-Dash</strong></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers_LoRA-Dash.py">Code</a></td>
       <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2409.01035">2025 ICLR</a></td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ddd; padding: 8px;"><strong> LoMAP</strong></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="./loralib/loralib/layers.py">Code</a></td>
+      <td style="border: 1px solid #ddd; padding: 8px;"><a href="https://arxiv.org/abs/2505.23094">2025 Arxiv</a></td>
     </tr>
     <tr>
       <td style="border: 1px solid #ddd; padding: 8px;"><em>More algorithms and updates are continually added...</em></td>

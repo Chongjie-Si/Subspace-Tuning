@@ -216,7 +216,7 @@ def train(
 
     model = prepare_model_for_int8_training(model, use_gradient_checkpointing=use_gradient_checkpointing)
     print(model)
-    if adapter_name == "lora":
+    if adapter_name == "lora" or adapter_name == "lomap":
         config = LoraConfig(
             r=lora_r,
             lora_alpha=lora_alpha,
@@ -224,6 +224,7 @@ def train(
             lora_dropout=lora_dropout,
             bias="none",
             task_type="CAUSAL_LM",
+            use_map=(adapter_name == "lomap"),
         )
     elif adapter_name == "dora":
         print("DoRA init")

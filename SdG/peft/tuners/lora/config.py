@@ -133,6 +133,7 @@ class LoraConfig(PeftConfig):
     lora_dropout: float = field(default=0.0, metadata={"help": "Lora dropout"})
 
     lora_use_dash: bool = field(default=False, metadata={"help": "whether to use LoRA-Dash"})
+    lora_use_map: bool = field(default=False, metadata={"help": "whether to use LoMAP"})
 
     fan_in_fan_out: bool = field(
         default=False,
@@ -229,6 +230,14 @@ class LoraConfig(PeftConfig):
             )
         },
     )
+    lora_use_map_pattern: Optional[dict] = field(
+        default_factory=dict,
+        metadata={
+            "help": (
+                "TBD"
+            )
+        },
+    )
     
     megatron_config: Optional[dict] = field(
         default=None,
@@ -315,6 +324,10 @@ class LoraConfig(PeftConfig):
 
         if self.use_dora and self.megatron_config:
             raise ValueError("DoRA does not support megatron_core, please set `use_dora=False`.")
+        if self.lora_use_map and self.use_dora:
+            raise ValueError("LoMAP and DoRA are separate decompositions; set `use_dora=False` when using LoMAP.")
+        if self.lora_use_map and self.lora_use_dash:
+            raise ValueError("LoMAP and LoRA-Dash should not be enabled on the same adapter.")
 
         # handle init_lora_weights and loftq_config
         if self.init_lora_weights == "loftq":

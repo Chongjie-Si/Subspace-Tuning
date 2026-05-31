@@ -678,6 +678,14 @@ def parse_args(input_args=None):
             "lora_dash in lora"
         ),
     )
+    parser.add_argument(
+        "--lora_use_map",
+        action="store_true",
+        default=False,
+        help=(
+            "LoMAP in LoRA"
+        ),
+    )
 
     if input_args is not None:
         args = parser.parse_args(input_args)
@@ -1201,6 +1209,7 @@ def main(args):
         lora_alpha=args.rank,
         init_lora_weights="gaussian",
         lora_use_dash=args.lora_use_dash,
+        lora_use_map=args.lora_use_map,
         target_modules=["to_k", "to_q", "to_v", "to_out.0"],
     )
     unet.add_adapter(unet_lora_config)
@@ -1215,6 +1224,7 @@ def main(args):
             lora_alpha=args.rank,
             init_lora_weights="gaussian",
             lora_use_dash=args.lora_use_dash,
+            lora_use_map=args.lora_use_map,
             target_modules=["q_proj", "k_proj", "v_proj", "out_proj"],
         )
         text_encoder_one.add_adapter(text_lora_config)

@@ -31,9 +31,9 @@ from .config import LoraConfig
 
 class LoraLayer(BaseTunerLayer):
     # All names of layers that may contain (trainable) adapter weights
-    adapter_layer_names = ("lora_A", "lora_B", "lora_embedding_A", "lora_embedding_B")
+    adapter_layer_names = ("lora_A", "lora_B", "lora_embedding_A", "lora_embedding_B", "lora_map_alpha", "lora_map_beta")
     # All names of other parameters that may contain adapter-related parameters
-    other_param_names = ("r", "lora_alpha", "scaling", "lora_dropout")
+    other_param_names = ("r", "lora_alpha", "scaling", "lora_dropout", "lora_use_map")
 
     def __init__(self, base_layer: nn.Module, **kwargs) -> None:
         self.base_layer = base_layer
@@ -42,6 +42,9 @@ class LoraLayer(BaseTunerLayer):
         self.scaling = {}
         self.lora_dropout = nn.ModuleDict({})
         self.lora_use_dash = {}
+        self.lora_use_map = {}
+        self.lora_map_alpha = nn.ParameterDict({})
+        self.lora_map_beta = nn.ParameterDict({})
 
         self.lora_A = nn.ModuleDict({})
         self.lora_B = nn.ModuleDict({})
@@ -96,7 +99,7 @@ class LoraLayer(BaseTunerLayer):
         self.out_features = out_features
 
     def update_layer(
-        self, adapter_name, r, lora_use_dash, lora_alpha, lora_dropout, init_lora_weights, use_rslora, use_dora: bool = False
+        self, adapter_name, r, lora_use_dash, lora_use_map, lora_alpha, lora_dropout, init_lora_weights, use_rslora, use_dora: bool = False
     ):
         # This code works for linear layers, override for other layer types
         if r <= 0:
@@ -106,6 +109,7 @@ class LoraLayer(BaseTunerLayer):
         self.lora_alpha[adapter_name] = lora_alpha
         #! 
         self.lora_use_dash[adapter_name] = lora_use_dash
+        self.lora_use_map[adapter_name] = lora_use_map
         if lora_dropout > 0.0:
             lora_dropout_layer = nn.Dropout(p=lora_dropout)
         else:
@@ -116,6 +120,10 @@ class LoraLayer(BaseTunerLayer):
         #! initial, modified
         self.lora_A[adapter_name] = nn.Linear(self.in_features, r, bias=False)
         self.lora_B[adapter_name] = nn.Linear(r, self.out_features, bias=False)
+        if lora_use_map:
+            weight = self.get_base_layer().weight
+            self.lora_map_alpha[adapter_name] = nn.Parameter(torch.ones((), dtype=weight.dtype, device=weight.device))
+            self.lora_map_beta[adapter_name] = nn.Parameter(torch.ones((), dtype=weight.dtype, device=weight.device))
         if lora_use_dash:
             self.lora_index[adapter_name] = nn.Linear(self.index, 1, bias=False)
             self.lora_w_u[adapter_name] = nn.Parameter(torch.zeros(self.out_features, self.index))
@@ -141,6 +149,7 @@ class LoraLayer(BaseTunerLayer):
                 else:
                     self.to(weight.device)
                 break
+        self.reset_map_parameters(adapter_name)
 
         if use_dora:
             self.dora_init(adapter_name)
@@ -149,6 +158,24 @@ class LoraLayer(BaseTunerLayer):
             self.use_dora[adapter_name] = False
 
         self.set_adapter(self.active_adapters)
+
+    def _unit_frobenius(self, weight: torch.Tensor) -> torch.Tensor:
+        norm = torch.linalg.vector_norm(weight.float()).clamp_min(1e-6)
+        return (weight.float() / norm).to(dtype=weight.dtype)
+
+    def reset_map_parameters(self, adapter_name: str) -> None:
+        if not self.lora_use_map.get(adapter_name, False):
+            return
+        with torch.no_grad():
+            weight = self.get_base_layer().weight
+            self.lora_map_alpha[adapter_name].copy_(torch.linalg.vector_norm(weight.float()).to(weight.dtype))
+            self.lora_map_beta[adapter_name].fill_(1.0)
+
+    def _map_weight(self, adapter_name: str, base_weight: torch.Tensor, delta_weight: torch.Tensor) -> torch.Tensor:
+        return (
+            self.lora_map_alpha[adapter_name] * self._unit_frobenius(base_weight)
+            + self.lora_map_beta[adapter_name] * self._unit_frobenius(delta_weight)
+        )
 
     def reset_lora_parameters(self, adapter_name, init_lora_weights):
         if init_lora_weights is False:
@@ -320,6 +347,9 @@ class LoraLayer(BaseTunerLayer):
             if self.use_dora.get(adapter_name, False):
                 msg = "Cannot pass `adapter_names` when DoRA is enabled."
                 raise ValueError(msg)
+            if self.lora_use_map.get(adapter_name, False):
+                msg = "Cannot pass `adapter_names` when LoMAP is enabled."
+                raise ValueError(msg)
     
     def calculate_change_rate(self, a, b, r):
         change_rate = abs(b) / abs(a)
@@ -414,6 +444,7 @@ class Linear(nn.Module, LoraLayer):
         use_dora: bool = False,
         #!
         lora_use_dash: bool=False,
+        lora_use_map: bool=False,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -425,6 +456,7 @@ class Linear(nn.Module, LoraLayer):
             adapter_name,
             r,
             lora_use_dash=lora_use_dash,
+            lora_use_map=lora_use_map,
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             init_lora_weights=init_lora_weights,
@@ -459,7 +491,10 @@ class Linear(nn.Module, LoraLayer):
                     # because of the copy operation.
                     orig_weights = base_layer.weight.data.clone()
                     delta_weight = self.get_delta_weight(active_adapter)
-                    if not self.use_dora[active_adapter]:
+                    if self.lora_use_map.get(active_adapter, False):
+                        self._cache_store(f"{active_adapter}-map_base_weight", orig_weights)
+                        orig_weights = self._map_weight(active_adapter, orig_weights, delta_weight)
+                    elif not self.use_dora[active_adapter]:
                         orig_weights = orig_weights + delta_weight
                     else:
                         # handle dora
@@ -480,7 +515,10 @@ class Linear(nn.Module, LoraLayer):
                     base_layer.weight.data = orig_weights
                 else:
                     delta_weight = self.get_delta_weight(active_adapter)
-                    if not self.use_dora[active_adapter]:
+                    if self.lora_use_map.get(active_adapter, False):
+                        self._cache_store(f"{active_adapter}-map_base_weight", base_layer.weight.data.clone())
+                        base_layer.weight.data = self._map_weight(active_adapter, base_layer.weight.data, delta_weight)
+                    elif not self.use_dora[active_adapter]:
                         base_layer.weight.data = base_layer.weight.data + delta_weight
                     else:
                         # handle dora
@@ -508,7 +546,9 @@ class Linear(nn.Module, LoraLayer):
             if active_adapter in self.lora_A.keys():
                 weight = self.get_base_layer().weight
                 delta_weight = self.get_delta_weight(active_adapter)
-                if not self.use_dora[active_adapter]:
+                if self.lora_use_map.get(active_adapter, False):
+                    weight.data = self._cache_pop(f"{active_adapter}-map_base_weight")
+                elif not self.use_dora[active_adapter]:
                     weight.data -= delta_weight
                 else:
                     weight_norm = self._cache_pop(f"{active_adapter}-weight_norm")
@@ -585,6 +625,7 @@ class Linear(nn.Module, LoraLayer):
         else:
             result = self.base_layer(x, *args, **kwargs)
             torch_result_dtype = result.dtype
+            map_base_applied = False
             for active_adapter in self.active_adapters:
                 if active_adapter not in self.lora_A.keys():
                     continue
@@ -596,6 +637,24 @@ class Linear(nn.Module, LoraLayer):
                 x = x.to(lora_A.weight.dtype)
 
                 if not self.use_dora[active_adapter]:
+                    if self.lora_use_map.get(active_adapter, False):
+                        base_layer = self.get_base_layer()
+                        base_weight = self.lora_map_alpha[active_adapter] * self._unit_frobenius(base_layer.weight)
+                        delta_weight = self.lora_map_beta[active_adapter] * self._unit_frobenius(
+                            self.get_delta_weight(active_adapter)
+                        )
+                        base_weight = base_weight.to(x.dtype)
+                        delta_weight = delta_weight.to(x.dtype)
+                        bias = base_layer.bias.to(x.dtype) if base_layer.bias is not None else None
+                        if not map_base_applied:
+                            result = F.linear(
+                                x,
+                                transpose(base_weight, self.fan_in_fan_out),
+                                bias=bias,
+                            )
+                            map_base_applied = True
+                        result += F.linear(dropout(x), transpose(delta_weight, self.fan_in_fan_out), bias=None)
+                        continue
                     #! forward, added
                     result = result + lora_B(lora_A(dropout(x))) * scaling
                     if self.lora_use_dash[active_adapter]:

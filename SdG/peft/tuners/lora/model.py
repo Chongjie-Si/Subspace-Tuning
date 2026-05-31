@@ -189,11 +189,13 @@ class LoraModel(BaseTuner):
         #expert_A = lora_config.expert_A_pattern.get(target_name_key, lora_config.lora_expert_A)
         #expert_B = lora_config.expert_B_pattern.get(target_name_key, lora_config.lora_expert_B)
         lora_use_dash = lora_config.lora_use_dash_pattern.get(target_name_key, lora_config.lora_use_dash)
+        lora_use_map = lora_config.lora_use_map_pattern.get(target_name_key, lora_config.lora_use_map)
 
         kwargs = {
             "r": r,
             "lora_alpha": alpha,
             "lora_use_dash": lora_use_dash,
+            "lora_use_map": lora_use_map,
             "lora_dropout": lora_config.lora_dropout,
             "fan_in_fan_out": lora_config.fan_in_fan_out,
             "init_lora_weights": lora_config.init_lora_weights,
@@ -217,6 +219,7 @@ class LoraModel(BaseTuner):
                 adapter_name,
                 r,
                 lora_use_dash=lora_use_dash,
+                lora_use_map=lora_use_map,
                 lora_alpha=alpha,
                 lora_dropout=lora_config.lora_dropout,
                 init_lora_weights=lora_config.init_lora_weights,

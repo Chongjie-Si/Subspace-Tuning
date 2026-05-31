@@ -16,9 +16,15 @@ class LoRALayer():
         lora_alpha: int, 
         lora_dropout: float,
         merge_weights: bool,
+        use_map: bool = False,
+        map_beta_init: float = 1.0,
+        map_eps: float = 1e-6,
     ):
         self.r = r
         self.lora_alpha = lora_alpha
+        self.use_map = use_map
+        self.map_beta_init = map_beta_init
+        self.map_eps = map_eps
         # Optional dropout
         if lora_dropout > 0.:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
@@ -27,6 +33,17 @@ class LoRALayer():
         # Mark the weight as unmerged
         self.merged = False
         self.merge_weights = merge_weights
+
+    def _unit_frobenius(self, weight: torch.Tensor) -> torch.Tensor:
+        norm = torch.linalg.vector_norm(weight.float()).clamp_min(self.map_eps)
+        return (weight.float() / norm).to(dtype=weight.dtype)
+
+    def _init_map_scalars(self, weight: torch.Tensor):
+        if not self.use_map or getattr(self, "_map_scalars_initialized", False):
+            return
+        with torch.no_grad():
+            self.map_alpha.copy_(torch.linalg.vector_norm(weight.float()).to(self.map_alpha.dtype))
+        self._map_scalars_initialized = True
 
 
 class Embedding(nn.Embedding, LoRALayer):
@@ -100,11 +117,15 @@ class Linear(nn.Linear, LoRALayer):
         lora_dropout: float = 0.,
         fan_in_fan_out: bool = False, # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
         merge_weights: bool = True,
+        use_map: bool = False,
+        map_beta_init: float = 1.0,
+        map_eps: float = 1e-6,
         **kwargs
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
         LoRALayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout,
-                           merge_weights=merge_weights)
+                           merge_weights=merge_weights, use_map=use_map,
+                           map_beta_init=map_beta_init, map_eps=map_eps)
 
         self.fan_in_fan_out = fan_in_fan_out
         # Actual trainable parameters
@@ -112,6 +133,10 @@ class Linear(nn.Linear, LoRALayer):
             self.lora_A = nn.Parameter(self.weight.new_zeros((r, in_features)))
             self.lora_B = nn.Parameter(self.weight.new_zeros((out_features, r)))
             self.scaling = self.lora_alpha / self.r
+            if self.use_map:
+                self.map_alpha = nn.Parameter(self.weight.new_tensor(1.0))
+                self.map_beta = nn.Parameter(self.weight.new_tensor(float(map_beta_init)))
+                self._map_scalars_initialized = False
             # Freezing the pre-trained weight matrix
             self.weight.requires_grad = False
         self.reset_parameters()
@@ -131,7 +156,10 @@ class Linear(nn.Linear, LoRALayer):
         nn.Linear.train(self, mode)
         if self.merge_weights and self.merged:
             # Make sure that the weights are not merged
-            if self.r > 0:
+            if self.r > 0 and self.use_map:
+                self.weight.data.copy_(self._map_base_weight)
+                del self._map_base_weight
+            elif self.r > 0:
                 self.weight.data -= T(self.lora_B @ self.lora_A) * self.scaling
             self.merged = False
     
@@ -141,20 +169,42 @@ class Linear(nn.Linear, LoRALayer):
         nn.Linear.eval(self)
         if self.merge_weights and not self.merged:
             # Merge the weights and mark it
-            if self.r > 0:
+            if self.r > 0 and self.use_map:
+                self._init_map_scalars(self.weight)
+                self._map_base_weight = self.weight.data.clone()
+                self.weight.data.copy_(self._map_weight().data)
+            elif self.r > 0:
                 self.weight.data += T(self.lora_B @ self.lora_A) * self.scaling
             self.merged = True
+
+    def _map_weight(self):
+        delta = (self.lora_B @ self.lora_A) * self.scaling
+        return self.map_alpha * self._unit_frobenius(self.weight) + self.map_beta * self._unit_frobenius(delta)
 
     def forward(self, x: torch.Tensor):
         def T(w):
             return w.T if self.fan_in_fan_out else w
         if self.r > 0 and not self.merged:
+            if self.use_map:
+                self._init_map_scalars(self.weight)
+                base_weight = self.map_alpha * self._unit_frobenius(self.weight)
+                delta = (self.lora_B @ self.lora_A) * self.scaling
+                delta_weight = self.map_beta * self._unit_frobenius(delta)
+                result = F.linear(x, T(base_weight), bias=self.bias)
+                result += F.linear(self.lora_dropout(x), T(delta_weight), bias=None)
+                return result
             result = F.linear(x, T(self.weight), bias=self.bias)
             if self.r > 0:
                 result += (self.lora_dropout(x) @ self.lora_A.T @ self.lora_B.T) * self.scaling
             return result
         else:
             return F.linear(x, T(self.weight), bias=self.bias)
+
+
+class LoMAPLinear(Linear):
+    def __init__(self, *args, **kwargs):
+        kwargs["use_map"] = True
+        super().__init__(*args, **kwargs)
 
 
 class MergedLinear(nn.Linear, LoRALayer):
