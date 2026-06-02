@@ -11,20 +11,24 @@ from typing import Optional, List
 
 class LoRALayer():
     def __init__(
-        self, 
-        r: int, 
-        lora_alpha: int, 
+        self,
+        r: int,
+        lora_alpha: int,
         lora_dropout: float,
         merge_weights: bool,
         use_map: bool = False,
         map_beta_init: float = 1.0,
         map_eps: float = 1e-6,
+        map_norm_scope: str = "global",  # "global" | "column" | "row" | "row_column"
+        map_detach_denom: bool = False,  # if True, stop gradient through the normalization denominator
     ):
         self.r = r
         self.lora_alpha = lora_alpha
         self.use_map = use_map
         self.map_beta_init = map_beta_init
         self.map_eps = map_eps
+        self.map_norm_scope = map_norm_scope
+        self.map_detach_denom = map_detach_denom
         # Optional dropout
         if lora_dropout > 0.:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
@@ -35,8 +39,34 @@ class LoRALayer():
         self.merge_weights = merge_weights
 
     def _unit_frobenius(self, weight: torch.Tensor) -> torch.Tensor:
-        norm = torch.linalg.vector_norm(weight.float()).clamp_min(self.map_eps)
-        return (weight.float() / norm).to(dtype=weight.dtype)
+        scope = getattr(self, 'map_norm_scope', 'global')
+        detach = getattr(self, 'map_detach_denom', False)
+        if scope == 'global':
+            norm = torch.linalg.vector_norm(weight.float()).clamp_min(self.map_eps)
+            if detach:
+                norm = norm.detach()
+            return (weight.float() / norm).to(dtype=weight.dtype)
+        elif scope == 'column':
+            norm = weight.float().norm(dim=0, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm = norm.detach()
+            return (weight.float() / norm).to(dtype=weight.dtype)
+        elif scope == 'row':
+            norm = weight.float().norm(dim=1, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm = norm.detach()
+            return (weight.float() / norm).to(dtype=weight.dtype)
+        elif scope == 'row_column':
+            norm_row = weight.float().norm(dim=1, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm_row = norm_row.detach()
+            w = weight.float() / norm_row
+            norm_col = w.norm(dim=0, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm_col = norm_col.detach()
+            return (w / norm_col).to(dtype=weight.dtype)
+        else:
+            raise ValueError(f"Unknown map_norm_scope: {scope}")
 
     def _init_map_scalars(self, weight: torch.Tensor):
         if not self.use_map or getattr(self, "_map_scalars_initialized", False):
@@ -109,23 +139,26 @@ class Embedding(nn.Embedding, LoRALayer):
 class Linear(nn.Linear, LoRALayer):
     # LoRA implemented in a dense layer
     def __init__(
-        self, 
-        in_features: int, 
-        out_features: int, 
-        r: int = 0, 
-        lora_alpha: int = 1, 
+        self,
+        in_features: int,
+        out_features: int,
+        r: int = 0,
+        lora_alpha: int = 1,
         lora_dropout: float = 0.,
         fan_in_fan_out: bool = False, # Set this to True if the layer to replace stores weight like (fan_in, fan_out)
         merge_weights: bool = True,
         use_map: bool = False,
         map_beta_init: float = 1.0,
         map_eps: float = 1e-6,
+        map_norm_scope: str = "global",
+        map_detach_denom: bool = False,
         **kwargs
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
         LoRALayer.__init__(self, r=r, lora_alpha=lora_alpha, lora_dropout=lora_dropout,
                            merge_weights=merge_weights, use_map=use_map,
-                           map_beta_init=map_beta_init, map_eps=map_eps)
+                           map_beta_init=map_beta_init, map_eps=map_eps,
+                           map_norm_scope=map_norm_scope, map_detach_denom=map_detach_denom)
 
         self.fan_in_fan_out = fan_in_fan_out
         # Actual trainable parameters

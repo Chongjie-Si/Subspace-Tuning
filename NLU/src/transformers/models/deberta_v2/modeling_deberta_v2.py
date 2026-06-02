@@ -226,11 +226,16 @@ class DebertaV2SelfOutput(nn.Module):
         super().__init__()
         if config.apply_lora and "attention.output" in config.lora_module:
             if config.lora_type == "frd":
-                self.dense = lora.Linear(config.hidden_size, config.hidden_size, r=config.lora_r, 
+                self.dense = lora.Linear(config.hidden_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.hidden_size, config.hidden_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.dense = lora.SVDLinear(config.hidden_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.dense = lora.LoMAPLinear(config.hidden_size, config.hidden_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -292,11 +297,16 @@ class DebertaV2Intermediate(nn.Module):
         super().__init__()
         if config.apply_lora and "intermediate" in config.lora_module:
             if config.lora_type == "frd":
-                self.dense = lora.Linear(config.hidden_size, config.intermediate_size, r=config.lora_r, 
+                self.dense = lora.Linear(config.hidden_size, config.intermediate_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.hidden_size, config.intermediate_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.dense = lora.SVDLinear(config.hidden_size, config.intermediate_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.dense = lora.LoMAPLinear(config.hidden_size, config.intermediate_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -316,13 +326,18 @@ class DebertaV2Intermediate(nn.Module):
 class DebertaV2Output(nn.Module):
     def __init__(self, config):
         super().__init__()
-        if config.apply_lora and "layer.output" in config.lora_module: 
+        if config.apply_lora and "layer.output" in config.lora_module:
             if config.lora_type == "frd":
-                self.dense = lora.Linear(config.intermediate_size, config.hidden_size, r=config.lora_r, 
+                self.dense = lora.Linear(config.intermediate_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.intermediate_size, config.hidden_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.dense = lora.SVDLinear(config.intermediate_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.dense = lora.LoMAPLinear(config.intermediate_size, config.hidden_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -616,11 +631,16 @@ class DisentangledSelfAttention(torch.nn.Module):
         self.all_head_size = self.num_attention_heads * self.attention_head_size
         if config.apply_lora and "query" in config.lora_module:
             if config.lora_type == "frd":
-                self.query_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.query_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.query_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.query_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.query_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -628,11 +648,16 @@ class DisentangledSelfAttention(torch.nn.Module):
 
         if config.apply_lora and "key" in config.lora_module:
             if config.lora_type == "frd":
-                self.key_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.key_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.key_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.key_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.key_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -640,11 +665,16 @@ class DisentangledSelfAttention(torch.nn.Module):
 
         if config.apply_lora and "value" in config.lora_module:
             if config.lora_type == "frd":
-                self.value_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.value_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
-            elif config.lora_type == "svd": 
-                self.value_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+            elif config.lora_type == "svd":
+                self.value_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False)
+            elif config.lora_type == "map":
+                self.value_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
+                                            lora_alpha=config.lora_alpha, merge_weights=False,
+                                            map_beta_init=getattr(config, 'map_beta_init', 1.0),
+                                            map_eps=getattr(config, 'map_eps', 1e-6))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:

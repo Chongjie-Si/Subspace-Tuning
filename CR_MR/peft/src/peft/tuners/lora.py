@@ -68,6 +68,8 @@ class LoraConfig(PeftConfig):
     use_map: bool = field(default=False, metadata={"help": "Use MAP weight decomposition on top of LoRA"})
     map_beta_init: float = field(default=1.0, metadata={"help": "Initial MAP update-direction magnitude"})
     map_eps: float = field(default=1e-6, metadata={"help": "Epsilon for MAP Frobenius normalization"})
+    map_norm_scope: str = field(default="global", metadata={"help": "MAP normalization scope: global | column | row | row_column"})
+    map_detach_denom: bool = field(default=False, metadata={"help": "Stop gradient through MAP normalization denominator"})
     merge_weights: bool = field(
         default=False, metadata={"help": "Merge weights of the original model and the Lora model"}
     )

@@ -58,6 +58,11 @@ def train(
         lora_alpha: int = 16,
         lora_dropout: float = 0.05,
         lora_target_modules: List[str] = None,
+        # MAP hyperparams (used when adapter_name == "lomap")
+        map_beta_init: float = 1.0,
+        map_eps: float = 1e-6,
+        map_norm_scope: str = "global",
+        map_detach_denom: bool = False,
         # bottleneck adapter hyperparams
         bottleneck_size: int = 256,
         non_linearity: str = "tanh",
@@ -225,6 +230,10 @@ def train(
             bias="none",
             task_type="CAUSAL_LM",
             use_map=(adapter_name == "lomap"),
+            map_beta_init=map_beta_init,
+            map_eps=map_eps,
+            map_norm_scope=map_norm_scope,
+            map_detach_denom=map_detach_denom,
         )
     elif adapter_name == "dora":
         print("DoRA init")

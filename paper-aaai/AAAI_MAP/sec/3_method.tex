@@ -1,0 +1,108 @@
+\section{The Proposed Framework: MAP}
+\label{sec:method}
+
+In this section, we introduce our framework, MAP.
+The framework of MAP is shown in Fig. \ref{fig:framework}.
+We first revisit the notion of matrix adaptation from a vector space perspective.
+As discussed in the introduction, any weight matrix $\mathbf{W} \in \mathbb{R}^{n \times m}$ can be flattened into a high-dimensional vector $\mathbf{w} \in \mathbb{R}^{nm}$. 
+This allows us to interpret the adaptation process in terms of classical vector operations, where the direction of $\mathbf{w}$ is defined by its unit-norm vector, and the magnitude by its $\ell_2$ norm.
+
+
+\subsection{Vector-Based Formulation}
+
+Under this formulation, we model the final fine-tuned weight vector $\mathbf{w}'$ as a directional combination of the pre-trained weights and the learned update vector:
+\begin{equation}
+\mathbf{w}' = \alpha \cdot \frac{\mathbf{w}}{\|\mathbf{w}\|_2+\epsilon} + \beta \cdot \frac{\Delta\mathbf{w}}{\|\Delta\mathbf{w}\|_2+\epsilon},
+\label{eq:vector-map}
+\end{equation}
+where $\alpha, \beta \in \mathbb{R}$ are learnable scalar coefficients that independently control the contribution (i.e., magnitude) of the pre-trained vector and its directional update, and $\epsilon>0$ is a small constant for numerical stability.
+This formulation has several appealing properties:
+\begin{itemize}
+    \item It cleanly separates the direction and magnitude of each component.
+    \item It treats $\mathbf{w}$ and $\Delta \mathbf{w}$ in the same vector space, enabling their alignment or contrast to be interpreted geometrically.
+    \item It introduces only two additional parameters per layer, making it highly lightweight compared to methods like DoRA.
+
+
+\end{itemize}
+
+
+\subsection{Matrix-Based Formulation}
+
+When applied to the original matrix space, particularly when integrated with LoRA, MAP takes the following form:
+\begin{equation}
+\mathbf{W}^* = \alpha \cdot \frac{\mathbf{W}}{\|\mathbf{W}\|_F+\epsilon} + \beta \cdot \frac{\mathbf{A}\mathbf{B}}{\|\mathbf{A}\mathbf{B}\|_F+\epsilon},
+\label{eq:matrix-map}
+\end{equation}
+where $\|\cdot\|_F$ denotes the Frobenius norm, and $\Delta \mathbf{W} = \mathbf{A}\mathbf{B}$ is the standard low-rank adaptation used in LoRA.
+This formulation can be directly derived since the Frobenius norm of $\mathbf{W}$ satisfies:
+\begin{equation}
+\|\mathbf{W}\|_F = \|\mathbf{w}\|_2,
+\end{equation}
+Therefore, the vector and matrix formulations of MAP are mathematically equivalent in terms of magnitude scaling.
+
+\subsection{Numerical Stability and Initialization}
+
+A direct implementation of Eq. \ref{eq:matrix-map} must handle the standard LoRA initialization in which $\mathbf{A}$ is initialized with a Kaiming distribution and $\mathbf{B}$ is initialized to zero.
+At this point $\mathbf{A}\mathbf{B}=\mathbf{0}$, making normalization by $\|\mathbf{A}\mathbf{B}\|_F$ undefined.
+We therefore use the $\epsilon$-stabilized normalization in Eq. \ref{eq:matrix-map}, with $\epsilon=10^{-6}$ in our implementation.
+Unless otherwise specified, the scalar coefficients are initialized as
+\begin{equation}
+\alpha_0=\|\mathbf{W}\|_F,\qquad \beta_0=1.
+\end{equation}
+This keeps the initial base branch close to the pre-trained weight,
+$\alpha_0\mathbf{W}/(\|\mathbf{W}\|_F+\epsilon)\approx \mathbf{W}$,
+while the update branch is initially zero-valued because $\mathbf{A}\mathbf{B}=\mathbf{0}$.
+The denominator is optimized jointly with the low-rank matrices rather than detached.
+This design preserves the standard LoRA initialization while making MAP well-defined from the first optimization step.
+
+\paragraph{Initialization choices.}
+The default of $\alpha_0=\|\mathbf{W}\|_F$ and $\beta_0=1$ is \emph{function-preserving} up to $O(\epsilon)$: the network output is identical to the frozen pre-trained model at $t=0$, while gradients with respect to $\alpha$, $\beta$, $\mathbf{A}$, and $\mathbf{B}$ are all well-defined.
+Alternative choices include $\beta_0=0$ (fully function-preserving but suppresses early update-direction learning) and $\beta_0\ll 1$ (a warm-up compromise).
+The denominator $\|\mathbf{A}\mathbf{B}\|_F+\epsilon$ is optimized jointly with $\mathbf{A}$ and $\mathbf{B}$ rather than detached; detaching the denominator decouples magnitude and direction optimization more aggressively but can slow convergence.
+We report sensitivity analyses for $\epsilon$, $\beta_0$, and the detach choice in the supplementary material.
+
+\subsection{Geometric Properties}
+
+The Frobenius formulation gives MAP invariance properties that are not shared by column-wise normalizations.
+For any orthogonal matrices $\mathbf{U}$ and $\mathbf{V}$,
+\begin{equation}
+\|\mathbf{U}\mathbf{W}\mathbf{V}\|_F^2
+=\mathrm{tr}(\mathbf{V}^{\top}\mathbf{W}^{\top}\mathbf{U}^{\top}\mathbf{U}\mathbf{W}\mathbf{V})
+=\|\mathbf{W}\|_F^2.
+\end{equation}
+Thus the global direction $\mathbf{W}/\|\mathbf{W}\|_F$ is preserved under left and right orthogonal changes of basis, whereas column-wise normalization is not invariant to right-side column mixing.
+
+The normalization also clarifies the optimization geometry.
+Let $\Delta=\mathbf{A}\mathbf{B}$ and, for nonzero $\Delta$, define $\hat{\delta}=\mathrm{vec}(\Delta)/\|\Delta\|_F$.
+The first-order differential of the normalized update direction is
+\begin{equation}
+d\hat{\delta}=
+\frac{1}{\|\Delta\|_F}
+\left(\mathbf{I}-\hat{\delta}\hat{\delta}^{\top}\right)d\,\mathrm{vec}(\Delta),
+\end{equation}
+which projects changes in $\Delta$ onto the tangent space of the Frobenius sphere.
+Consequently, $\beta$ controls update magnitude, while $\mathbf{A}$ and $\mathbf{B}$ primarily shape the update direction.
+
+MAP can also be written as an effective update over the pre-trained weight:
+\begin{equation}
+\mathbf{W}^*-\mathbf{W}
+=
+\left(\frac{\alpha}{\|\mathbf{W}\|_F+\epsilon}-1\right)\mathbf{W}
++
+\beta\frac{\mathbf{A}\mathbf{B}}{\|\mathbf{A}\mathbf{B}\|_F+\epsilon}.
+\end{equation}
+This decomposition shows that MAP augments the low-rank update with a full-rank radial component along the pre-trained weight direction.
+Ignoring the negligible $\epsilon$ term, the distance to the pre-trained weight is bounded by
+\begin{equation}
+\|\mathbf{W}^*-\mathbf{W}\|_F
+\leq
+|\alpha-\|\mathbf{W}\|_F|+|\beta|,
+\end{equation}
+so the learned scalars provide direct control over the adaptation radius.
+
+\input{sec/tables/cr}
+
+
+In this way, MAP can be viewed as a direction-aware modulation layer that scales the normalized base and update matrices in a principled and learnable fashion.
+We advocate LoMAP as a drop-in enhancement to existing PEFT frameworks.
+In our experiments, we integrate MAP with LoRA to form a new variant, LoMAP, which we adopt as the default implementation.

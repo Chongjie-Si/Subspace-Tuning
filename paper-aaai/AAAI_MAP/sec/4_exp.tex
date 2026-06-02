@@ -1,0 +1,205 @@
+\section{Experiments}
+
+In this section, we conduct a series of experiments to demonstrate the effectiveness of MAP across various tasks, including commonsense reasoning, natural language understanding, and subject-driven generation tasks.
+In the following subsections, we provide detailed descriptions of each task and report the corresponding performance achieved by MAP.
+All LoMAP runs use standard LoRA initialization, $\epsilon=10^{-6}$, $\alpha_0=\|\mathbf{W}\|_F$, and $\beta_0=1$.
+The Frobenius normalization denominators are optimized jointly with the low-rank matrices rather than detached.
+
+
+\input{sec/tables/nlu}
+
+
+
+\subsection{Commonsense Reasoning}
+
+\subsubsection{Task, Model, and Baselines}
+
+The commonsense reasoning evaluation includes eight diverse benchmarks, each associated with a specific dataset: BoolQ \cite{clark2019boolq}, PIQA \cite{bisk2020piqa}, SIQA \cite{sap2019socialiqa}, HellaSwag \cite{zellers2019hellaswag}, WinoGrande \cite{sakaguchi2021winogrande}, ARC-e, ARC-c \cite{clark2018thinkarce}, and OpenBookQA (OBQA) \cite{mihaylov2018canobqa}. 
+Following the protocol proposed in \cite{hu2023llm}, we consolidate the training splits of all benchmarks into a unified dataset, referred to as Commonsense170K, and evaluate model performance on the test sets of each benchmark individually.
+We fine-tune LLaMA-7B \cite{touvron2023llama} and LLaMA3-8B \cite{llama3modelcard} on this target task. 
+
+We compare LoMAP with several baselines including Prefix \cite{li2021prefix}, Series \cite{houlsby2019parameter}, Parallel \cite{he2021towards}, LoRA \cite{hu2021lora}, AdaLoRA \cite{zhang2022adaptive}, FLoRA \cite{si2024flora}, DoRA \cite{liu2024dora}, PiSSA \cite{meng2024pissa}, and MiLoRA \cite{wang2024milora}.
+In addition, we include comparisons with ChatGPT (gpt-3.5-turbo) by leveraging its zero-shot Chain-of-Thought reasoning capabilities, as outlined in \cite{wei2022chain}.
+All the experiments are conducted using NVIDIA A100 GPUs. 
+The hyper-parameters are
+shown in Table \ref{tab: cr detail}.
+
+
+\begin{table}[!ht]
+
+\centering
+\renewcommand\arraystretch{1}
+\setlength{\tabcolsep}{3mm}
+\caption{Hyper-parameter settings of LoMAP on commonsense reasoning task.}
+\resizebox{\linewidth}{!}{
+\begin{tabular}{c | c c c c | c c} 
+
+\toprule
+
+\textbf{Settings} & \multicolumn{4}{c|}{LLaMA-7B} & \multicolumn{2}{c}{LLaMA3-8B}\\ 
+
+\midrule
+
+
+Rank $r$ & 4 & 8 & 16 & 32 & 16 & 32 \\ \midrule
+
+$\alpha$ & 32 & 64 & 32 & 64 & 32 & 64 \\ \midrule
+
+
+LR ($10^{-4}$) & 3 & 3 & 2 & 3 & 3 & 3 \\ \midrule
+
+LR Scheduler & \multicolumn{6}{c}{Linear} \\ \midrule
+
+Dropout & \multicolumn{6}{c}{0.05} \\ \midrule
+
+Optimizer & \multicolumn{6}{c}{AdamW} \\ \midrule
+
+Batch size & \multicolumn{6}{c}{16} \\ \midrule
+
+Warmup Steps & \multicolumn{6}{c}{100} \\ \midrule
+
+Epochs & \multicolumn{6}{c}{3} \\ \midrule
+
+Where & \multicolumn{6}{c}{Q, K, V, Up, Down} \\
+
+\bottomrule
+
+\end{tabular}}
+\label{tab: cr detail}
+\end{table}
+
+
+
+
+
+\begin{table*}
+\centering
+\renewcommand\arraystretch{0.9}
+\setlength{\tabcolsep}{4mm}
+\caption{Hyper-parameter settings of LoMAP on NLU task.}
+\resizebox{\linewidth}{!}{
+\begin{tabular}{c | c c c c c c c c} 
+
+\toprule
+
+Hyper-parameter & MNLI & SST-2 & CoLA & QQP & QNLI & RTE & MRPC & STS-B\\ 
+
+\midrule
+
+Optimizer & \multicolumn{8}{c}{AdamW} \\ \midrule
+
+Warmup Ratio & \multicolumn{8}{c}{0.1} \\ \midrule
+
+LR schedule & \multicolumn{8}{c}{Linear} \\  \midrule
+
+Rank $r$ & \multicolumn{8}{c}{2 \& 8}\\ \midrule
+
+LoRA alpha & \multicolumn{8}{c}{4 \& 16} \\ \midrule
+
+Max Seq. Len. & 256 & 128 & 64 & 320 & 512 & 320 & 320 & 128 \\ \midrule
+
+Batch Size & 32 & 32 & 32 & 32 & 32 & 32 & 32 & 32 \\ \midrule
+
+Learning Rate & 5e-4 & 8e-4 & 8e-4 & 1e-3 & 5e-4 & 1.2e-3 & 1e-3 & 5e-4 \\ \midrule
+
+Epochs & 12 & 24 & 25 & 5 & 5 & 50 & 30 & 25  \\ 
+
+\bottomrule
+
+\end{tabular}}
+\label{tab: nlu detail}
+\end{table*}
+
+
+
+
+\subsubsection{Experimental Results}
+
+Table \ref{tab:results of commonsense} presents the evaluation results of various PEFT methods on commonsense reasoning benchmarks under multiple model backbones and rank settings. 
+We observe several notable trends:
+
+First, LoMAP consistently outperforms all reported PEFT baselines under comparable parameter budgets.
+For instance, under the LLaMA-7B backbone with $r=16$, LoMAP achieves an average accuracy of 77.9, substantially improving over LoRA (70.9); no DoRA result is available at this rank setting.
+At $r=32$, LoMAP further reaches 78.8, surpassing DoRA (78.4) and LoRA-Dash (78.4) under similar parameter budgets.
+Notably, even at lower ranks (e.g., $r=4$ or $r=8$), LoMAP yields strong performance, achieving 75.9 at $r=4$ and 76.4 at $r=8$, clearly outperforming the reported AdaLoRA, FLoRA, and DoRA baselines where available.
+Second, LoMAP demonstrates excellent scalability across model sizes. 
+When evaluated on the larger LLaMA3-8B model, LoMAP achieves the highest accuracy of 85.8 at $r=32$, surpassing strong baselines such as DoRA (85.2), and AdaLoRA (82.1). 
+This indicates that LoMAP remains effective even when scaling to larger models and more complex reasoning tasks.
+These results collectively validate the effectiveness and generality of LoMAP as a principled and scalable improvement over existing low-rank adaptation methods.
+
+
+
+\subsection{Natural Language Understanding}
+
+
+\subsubsection{Task, Model, and Baselines}
+
+For the Natural Language Understanding (NLU) task, we use the General Language Understanding Evaluation (GLUE) benchmark \cite{wang2018glue}, which evaluates models across various tasks. 
+The benchmark includes two sentence classification tasks: CoLA \cite{warstadt2019neural} and SST-2 \cite{socher2013recursive}, three tasks related to similarity and paraphrasing: MRPC \cite{dolan2005automatically}, QQP \cite{wang2018glue}, and STS-B \cite{cer2017semeval}, as well as three natural language inference tasks: MNLI \cite{williams2017broad}, QNLI \cite{rajpurkar2016squad}, and RTE \cite{dagan2005pascal,bar2006second,giampiccolo2007third,bentivogli2009fifth}. 
+We fine-tune the DeBERTaV3-base and DeBERTaV3-large \cite{he2021debertav3} models on these tasks. 
+The hyper-parameter settings are shown in Table \ref{tab: nlu detail}.
+
+
+In addition to LoRA, DoRA and Series methods, we also include PAdapter in our comparisons.
+Series introduces adapter modules at the interface between the self-attention and FFN blocks, incorporating them with residual connections to preserve model flow. In contrast, PAdapter employs a more streamlined design by attaching adapters solely after the FFN and LayerNorm layers.
+
+
+
+
+
+\subsubsection{Experimental Results}
+
+
+Table \ref{tab: deberta results} presents the GLUE benchmark results with DeBERTaV3-base and DeBERTaV3-large under various PEFT settings. 
+Across both model sizes and rank configurations, LoMAP consistently delivers superior performance.
+
+Under the DeBERTaV3-base setting, LoMAP exhibits clear advantages even in low-rank regimes.
+At rank $r=2$, it achieves an average score of 89.49, outperforming LoRA and Padapter, while maintaining comparable parameter efficiency. 
+As the rank increases to $r{=}8$, LoMAP continues to lead, reaching 89.64, surpassing LoRA’s 88.27 by a substantial margin.
+For the larger DeBERTaV3-large model, the benefits of LoMAP remain prominent. 
+With $r{=}8$, it achieves 91.18 average score, closing the gap with full fine-tuning (91.36) while requiring less than 1\% of the trainable parameters. 
+This demonstrates LoMAP’s strong capacity to scale to more expressive architectures without sacrificing efficiency.
+These results confirm the practicality of LoMAP for general-purpose language understanding and its potential to replace conventional fine-tuning in resource-constrained settings.
+
+
+\subsection{Subject-driven Generation}
+
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\linewidth]{fig/sdg.pdf}
+    \caption{Comparison of generated images from LoRA and LoMAP on the subject-driven generation task. It is evident that LoMAP consistently produces images that better reflect both the input subjects and the intended prompts compared to standard LoRA.}
+    \label{fig: sdg}
+\end{figure}
+
+
+
+
+
+\subsubsection{Task, Model, and Baselines}
+
+In this experiment, we fine-tune text-to-image diffusion models for subject-driven image generation, following the setup proposed in DreamBooth \cite{ruiz2023dreambooth}.
+The goal is to synthesize images that faithfully reflect a specific subject, given only a few reference examples. 
+To achieve this, we fine-tune a text-to-image model using image-text pairs in which the subject is denoted by a unique identifier (e.g., ``A photo of a [V] cat'').
+After fine-tuning, this identifier is embedded into new prompts to guide image generation specific to the learned subject.
+
+We use the SDXL model \cite{podell2023sdxl} as the backbone and apply both LoRA and LoMAP as adaptation techniques. 
+The model is trained with a learning rate of 1e-4, a batch size of 4, and for 500 steps on a single 80GB A100 GPU, which takes approximately 26 minutes. 
+Image generation is conducted using 50 inference steps per prompt, with each synthesis taking around 10 seconds.
+All experiments are conducted using the official DreamBooth dataset \cite{ruiz2023dreambooth}.
+
+
+
+
+
+
+
+
+\subsubsection{Experimental Results}
+
+
+As illustrated in Fig. \ref{fig: sdg}, the qualitative results highlight that LoMAP yields images with greater subject fidelity compared to standard LoRA. 
+In particular, LoRA’s generated samples—for example, those depicting a dog or a teapot—often diverge noticeably from the reference images.
+In contrast, LoMAP consistently preserves key subject attributes, producing visuals more closely aligned with the original exemplars.
+In addition, LoMAP demonstrates strong semantic alignment with complex prompts, accurately interpreting and visually rendering fine-grained concepts such as \textit{cobblestone} or \textit{white rug}.
+This highlights LoMAP’s capacity to effectively disentangle and integrate subject- and prompt-specific information during synthesis.

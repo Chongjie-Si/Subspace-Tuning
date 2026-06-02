@@ -1,0 +1,93 @@
+\section{Related Work}
+
+\subsection{Parameter Efficient Fine-tuning}
+To mitigate the computational overhead of adapting large-scale models, parameter-efficient fine-tuning (PEFT) has gained prominence as a practical alternative to full model tuning. Current PEFT methodologies can be broadly classified into three paradigms \cite{ding2023parameter}: adapter-based techniques \cite{zhang2022adaptive,chen2022adaptformer,pfeiffer2020adapterfusion,he2021towards}, prefix-based approaches \cite{li2021prefix,fischer2024prompt,liu2023gpt,lester2021power,razdaibiedina2023residual,shi2023dept}, and low-rank adaptation methods \cite{hu2021lora,hyeon2021fedpara,liu2024dora,qiu2023controlling,renduchintala2023tied,kopiczko2023vera,yeh2023navigating,zhang2022adaptive}.
+Adapter-based methods augment neural networks by inserting lightweight modules either sequentially or in parallel with existing layers.
+These compact components enable task-specific adjustments while maintaining the integrity of the original architecture. 
+Prefix-based strategies, on the other hand, prepend trainable embeddings, often termed soft prompts, to the model's input space. 
+By optimizing these task-specific embeddings, the model's behavior can be steered without modifying its core parameters.
+The third category, pioneered by LoRA, reparameterizes weight updates through low-rank decomposition. 
+This approach approximates the update matrix as a product of two smaller matrices, significantly reducing the number of trainable parameters while preserving adaptation capacity.
+
+\subsection{Low-rank Adaptation}
+LoRA leverages the observation that weight updates during fine-tuning often have a low intrinsic rank, allowing task-specific adaptation to be captured by a low-rank approximation \cite{aghajanyan2020intrinsic, li2018measuring}. 
+For a pre-trained weight matrix $\mathbf{W} \in \mathbb{R}^{n \times m}$, LoRA introduces a low-rank update $\Delta \mathbf{W} =\mathbf{A} \mathbf{B}$, where $\mathbf{A} \in \mathbb{R}^{n \times r}$ and $\mathbf{B} \in \mathbb{R}^{r \times m}$  with the rank $r \ll \{n,m\}$. 
+During fine-tuning, only $\mathbf{A}$ and $\mathbf{B}$ are updated, while $\mathbf{W}$ remains frozen. 
+The final fine-tuned weights are given by:
+\begin{equation}
+\mathbf{W} \rightarrow \mathbf{W} + \Delta \mathbf{W} = \mathbf{W} + \mathbf{A}\mathbf{B}.
+\label{eq lora}
+\end{equation}
+At initialization, the matrix $\mathbf{A}$ is typically initialized using a Kaiming distribution \cite{he2015delving}, and $\mathbf{B}$ is initialized to zeros. 
+During inference, the low-rank matrices $\mathbf{A}$ and $\mathbf{B}$ are integrated into $\mathbf{W}$ without any additional computational overhead. 
+
+\begin{figure*}
+    \centering
+    \includegraphics[width=\textwidth]{fig/framework.pdf}
+    \caption{Comparison of LoRA, DoRA, and our proposed MAP framework. DoRA normalizes the sum $\mathbf{W} + \mathbf{A}\mathbf{B}$ column-wise and rescales each column using a trainable vector.
+    In contrast, MAP normalizes both $\mathbf{W}$ and $\mathbf{A}\mathbf{B}$ using their Frobenius norms, and applies two learnable scalar coefficients $\alpha$ and $\beta$ to decouple and modulate their magnitudes. MAP provides a more principled and compact decoupling strategy in the vector space.}
+    \label{fig:framework}
+\end{figure*}
+
+
+\subsection{Advancement in Low-rank Adaptation}
+Since its inception, LoRA has inspired numerous extensions that refine its core principles \cite{hyeon2021fedpara,liu2024dora,zhang2022adaptive,si2024flora,feng2024trilora,kopiczko2023vera}.
+AdaLoRA \cite{zhang2022adaptive} enhances parameter efficiency by applying singular value decomposition to weight updates, selectively retaining only the most significant components. 
+FLoRA \cite{si2024flora} introduces a Tucker decomposition-based framework, constructing a low-rank core space that facilitates efficient weight reconstruction. 
+In the domain of diffusion models, OFT \cite{qiu2023controlling} demonstrates the effectiveness of orthogonal transformations for parameter-efficient adaptation.
+Our work builds upon these advancements in low-rank adaptation, proposing a novel approach that can intergrade with any LoRA variants. 
+Through comprehensive empirical evaluation, we demonstrate the efficacy of our technique relative to state-of-the-art LoRA variants.
+
+\subsection{Weight Decomposed LoRA}
+DoRA \cite{liu2024dora} extends the standard LoRA paradigm by decoupling the magnitude and direction of weights.
+Specifically, DoRA proposes to decouple the adaptation process by normalizing the sum of the pre-trained weight and low-rank update $\mathbf{W} + \mathbf{AB}$ on a per-column basis, followed by rescaling each column with a learnable vector $\mathbf{m} \in \mathbb{R}^m$. The final weight is computed as:
+\begin{equation}
+\text{DoRA} = \mathbf{m} \cdot \frac{\mathbf{W} + \mathbf{AB}}{\|\mathbf{W} + \mathbf{AB}\|_c},
+\end{equation}
+where $\|\cdot\|_c$ denotes column-wise normalization.
+Beyond DoRA, BiDoRA \cite{qin2024bidora} introduces a bi-level optimization scheme to decouple the learning of magnitude and direction in DoRA-style adaptation. 
+BoRA \cite{wang2024bora} extends the decomposition strategy of DoRA by introducing symmetric modulation across both row and column dimensions, addressing DoRA’s vertical-only adaptation and achieving improved alignment in weight structure and downstream performance.
+DeLoRA \cite{bini2025delora} is another closely related decomposition method that normalizes and scales low-rank matrices to decouple angular learning from adaptation strength while maintaining a Frobenius-style boundary around the pre-trained weights.
+
+While both MAP and DoRA share the high-level concept of the magnitude and direction of weight updates in parameter-efficient fine-tuning, their formulations, motivations, and implementations are fundamentally different.
+These methods can be compared under a common decomposition view in which an adapted weight is formed by normalizing a direction term and applying a magnitude term.
+DoRA uses column-wise normalization and a per-column magnitude vector; BoRA extends this idea to row and column dimensions; BiDoRA changes the optimization procedure with bi-level training; and DeLoRA decouples the strength and angle of the low-rank update within a bounded adaptation region.
+MAP differs from these methods by separately normalizing the pre-trained weight $\mathbf{W}$ and the low-rank update $\Delta\mathbf{W}$ with global Frobenius norms, then combining them through two global scalar magnitudes.
+Specifically, 
+\begin{itemize}
+    \item DoRA implicitly assumes that the direction of a matrix can be decomposed into per-column units, an assumption that lacks a clear theoretical grounding in matrix analysis. 
+    In contrast, MAP revisits the definition of direction and magnitude from a vector space perspective.
+    Instead of defining them column-wise, we flatten the entire matrix into a vector and apply standard vector normalization.
+    This formulation respects the global structure of the matrix and avoids column-wise decomposition. 
+    \item DoRA introduces $m$ additional learnable parameters for each $n \times m$ weight matrix, which can not be negligible. However, MAP introduces only two additional parameters per matrix, making it significantly more parameter-efficient than DoRA. 
+    Despite using fewer parameters, our method achieves better performance than DoRA in the experimental results.
+    \item DoRA is a method, while MAP is a framework, which can be coupled with existing methods to enhance their performances.
+\end{itemize}
+
+These differences highlight that, although both methods conceptually mention ``direction'' and ``magnitude'', MAP and DoRA are largely unrelated in terms of both theoretical motivation and practical behavior.
+
+\paragraph{Formal comparison.}
+The weight-decomposed family of methods can be unified under the following template: an adapted weight $\mathbf{W}^*$ is formed by normalizing a direction term and multiplying by a magnitude term.
+Table~\ref{tab:decomp-comparison} summarizes the key design choices.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\caption{Comparison of weight-decomposition PEFT methods. ``Norm scope'' refers to how the direction is defined; ``Magnitude'' to the form of the learnable scale; ``Extra params'' to trainable parameters added per $n\!\times\!m$ weight matrix.}
+\begin{tabular}{l c c c}
+\toprule
+\textbf{Method} & \textbf{Norm scope} & \textbf{Magnitude} & \textbf{Extra params} \\
+\midrule
+DoRA  & column-wise & per-column vector $\mathbf{m}\in\mathbb{R}^m$ & $m$ \\
+BoRA  & row \& column & per-row \& column vectors & $n+m$ \\
+BiDoRA & column-wise & per-column (bi-level opt.) & $m$ \\
+DeLoRA & Frobenius (low-rank $\Delta$) & scalar strength & $1$ \\
+\rowcolor{gray!15}
+MAP (ours) & global Frobenius ($\mathbf{W}$ and $\Delta\mathbf{W}$ separately) & two global scalars & $2$ \\
+\bottomrule
+\end{tabular}
+\label{tab:decomp-comparison}
+\end{table}
+
+MAP is the only method that (i) normalizes both the pre-trained weight $\mathbf{W}$ and the low-rank update $\Delta\mathbf{W}$ with their global Frobenius norms, (ii) uses only two global scalar magnitudes regardless of matrix size, and (iii) is invariant to orthogonal basis changes on both sides of $\mathbf{W}$ (see Section~\ref{sec:method}).
