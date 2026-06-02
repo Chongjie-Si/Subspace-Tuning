@@ -16,6 +16,23 @@
 """ Finetuning the library models for sequence classification on GLUE."""
 # You can also adapt this script on your own text classification task. Pointers for this are left as comments.
 
+# Pre-import triton and torch._dynamo eagerly to avoid a race-condition SIGSEGV.
+# When tqdm's monitor thread is running and the main thread lazily loads the
+# Triton C extension (triggered by the first optimizer.step()), the concurrent
+# dlopen crashes.  Importing both modules here, before any tqdm activity starts,
+# serialises the load and prevents the crash.
+try:
+    import triton          # noqa: F401
+    import triton.knobs    # noqa: F401
+    import triton.runtime  # noqa: F401
+    import triton.runtime.autotuner  # noqa: F401
+except Exception:
+    pass
+try:
+    import torch._dynamo  # noqa: F401
+except Exception:
+    pass
+
 import logging
 import os
 import random
@@ -26,7 +43,11 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 import numpy as np
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+try:
+    from datasets import load_metric
+except ImportError:
+    from evaluate import load as load_metric
 
 import transformers
 from transformers import (
