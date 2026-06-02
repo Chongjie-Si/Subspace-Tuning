@@ -144,6 +144,8 @@ class LoraModel(torch.nn.Module):
             "use_map": self.peft_config.use_map,
             "map_beta_init": self.peft_config.map_beta_init,
             "map_eps": self.peft_config.map_eps,
+            "map_norm_scope": self.peft_config.map_norm_scope,
+            "map_detach_denom": self.peft_config.map_detach_denom,
             "fan_in_fan_out": self.peft_config.fan_in_fan_out,
             "merge_weights": (self.peft_config.merge_weights or self.peft_config.inference_mode)
             and not is_hf_device_map_available,
@@ -290,12 +292,16 @@ class LoraLayer:
         use_map: bool = False,
         map_beta_init: float = 1.0,
         map_eps: float = 1e-6,
+        map_norm_scope: str = "global",
+        map_detach_denom: bool = False,
     ):
         self.r = r
         self.lora_alpha = lora_alpha
         self.use_map = use_map
         self.map_beta_init = map_beta_init
         self.map_eps = map_eps
+        self.map_norm_scope = map_norm_scope
+        self.map_detach_denom = map_detach_denom
         # Optional dropout
         if lora_dropout > 0.0:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
@@ -307,7 +313,27 @@ class LoraLayer:
         self.disable_adapters = False
 
     def _unit_frobenius(self, weight: torch.Tensor) -> torch.Tensor:
-        norm = torch.linalg.vector_norm(weight.float()).clamp_min(self.map_eps)
+        scope = getattr(self, 'map_norm_scope', 'global')
+        detach = getattr(self, 'map_detach_denom', False)
+        if scope == 'global':
+            norm = torch.linalg.vector_norm(weight.float()).clamp_min(self.map_eps)
+        elif scope == 'column':
+            norm = weight.float().norm(dim=0, keepdim=True).clamp_min(self.map_eps)
+        elif scope == 'row':
+            norm = weight.float().norm(dim=1, keepdim=True).clamp_min(self.map_eps)
+        elif scope == 'row_column':
+            norm_row = weight.float().norm(dim=1, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm_row = norm_row.detach()
+            w = weight.float() / norm_row
+            norm = w.norm(dim=0, keepdim=True).clamp_min(self.map_eps)
+            if detach:
+                norm = norm.detach()
+            return (w / norm).to(dtype=weight.dtype)
+        else:
+            raise ValueError(f"Unknown map_norm_scope: {scope}")
+        if detach:
+            norm = norm.detach()
         return (weight.float() / norm).to(dtype=weight.dtype)
 
     def reset_map_scalars(self):
@@ -331,6 +357,8 @@ class Linear(nn.Linear, LoraLayer):
         use_map: bool = False,
         map_beta_init: float = 1.0,
         map_eps: float = 1e-6,
+        map_norm_scope: str = "global",
+        map_detach_denom: bool = False,
         **kwargs,
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
@@ -343,6 +371,8 @@ class Linear(nn.Linear, LoraLayer):
             use_map=use_map,
             map_beta_init=map_beta_init,
             map_eps=map_eps,
+            map_norm_scope=map_norm_scope,
+            map_detach_denom=map_detach_denom,
         )
 
         self.fan_in_fan_out = fan_in_fan_out
