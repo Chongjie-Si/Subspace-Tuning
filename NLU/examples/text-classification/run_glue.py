@@ -225,6 +225,22 @@ class ModelArguments:
         default=None,
         metadata={"help": "The file path of LoRA parameters."},
     )
+    map_beta_init: Optional[float] = field(
+        default=1.0,
+        metadata={"help": "LoMAP: initial value of beta (update branch scale). Default 1.0."},
+    )
+    map_eps: Optional[float] = field(
+        default=1e-6,
+        metadata={"help": "LoMAP: epsilon for Frobenius norm stabilization. Default 1e-6."},
+    )
+    map_norm_scope: Optional[str] = field(
+        default="global",
+        metadata={"help": "LoMAP: normalization scope: global | column | row | row_column. Default global."},
+    )
+    map_detach_denom: Optional[bool] = field(
+        default=False,
+        metadata={"help": "LoMAP: if True, stop gradient through the normalization denominator."},
+    )
     apply_adapter: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether to apply adapter or not."},
@@ -456,6 +472,10 @@ def main():
         lora_module=model_args.lora_module, 
         lora_alpha=model_args.lora_alpha,
         lora_r=model_args.lora_r,
+        map_beta_init=model_args.map_beta_init,
+        map_eps=model_args.map_eps,
+        map_norm_scope=model_args.map_norm_scope,
+        map_detach_denom=model_args.map_detach_denom,
         apply_adapter=model_args.apply_adapter,
         adapter_type=model_args.adapter_type,
         adapter_size=model_args.adapter_size,

@@ -114,7 +114,7 @@ class XSoftmax(torch.autograd.Function):
     @staticmethod
     def backward(self, grad_output):
         (output,) = self.saved_tensors
-        inputGrad = _softmax_backward_data(grad_output, output, self.dim, output)
+        inputGrad = _softmax_backward_data(grad_output, output, self.dim, output.dtype)
         return inputGrad, None, None
 
 
@@ -235,7 +235,9 @@ class DebertaV2SelfOutput(nn.Module):
                 self.dense = lora.LoMAPLinear(config.hidden_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -306,7 +308,9 @@ class DebertaV2Intermediate(nn.Module):
                 self.dense = lora.LoMAPLinear(config.hidden_size, config.intermediate_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -337,7 +341,9 @@ class DebertaV2Output(nn.Module):
                 self.dense = lora.LoMAPLinear(config.intermediate_size, config.hidden_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -556,7 +562,7 @@ def make_log_bucket_position(relative_pos, bucket_size, max_position):
     mid = bucket_size // 2
     abs_pos = np.where((relative_pos < mid) & (relative_pos > -mid), mid - 1, np.abs(relative_pos))
     log_pos = np.ceil(np.log(abs_pos / mid) / np.log((max_position - 1) / mid) * (mid - 1)) + mid
-    bucket_pos = np.where(abs_pos <= mid, relative_pos, log_pos * sign).astype(np.int)
+    bucket_pos = np.where(abs_pos <= mid, relative_pos, log_pos * sign).astype(int)
     return bucket_pos
 
 
@@ -640,7 +646,9 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.query_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -657,7 +665,9 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.key_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
@@ -674,7 +684,9 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.value_proj = lora.LoMAPLinear(config.hidden_size, self.all_head_size, r=config.lora_r,
                                             lora_alpha=config.lora_alpha, merge_weights=False,
                                             map_beta_init=getattr(config, 'map_beta_init', 1.0),
-                                            map_eps=getattr(config, 'map_eps', 1e-6))
+                                            map_eps=getattr(config, 'map_eps', 1e-6),
+                                            map_norm_scope=getattr(config, 'map_norm_scope', 'global'),
+                                            map_detach_denom=getattr(config, 'map_detach_denom', False))
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
         else:
