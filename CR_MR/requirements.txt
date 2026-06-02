@@ -10,3 +10,5 @@ gradio==4.9.0
 scipy==1.11.4
 sentencepiece==0.1.99
 protobuf
+peft>=0.13.0
+tensorboard
