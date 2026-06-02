@@ -4,6 +4,7 @@
 # Usage: bash ablation_beta0.sh [GPU_ID]
 
 GPU=${1:-0}
+SEED=${2:-42}
 BASE_MODEL="huggyllama/llama-7b"
 DATA_PATH="commonsense_170k.json"
 RANK=16
@@ -22,7 +23,8 @@ for BETA0 in 0.0 0.0001 0.001 0.01 1.0; do
         --target_modules '["q_proj", "k_proj", "v_proj", "up_proj", "down_proj"]' \
         --lora_r $RANK --lora_alpha $ALPHA \
         --map_beta_init $BETA0 \
-        --use_gradient_checkpointing
+        --use_gradient_checkpointing \
+        --seed $SEED
 
     for DATASET in boolq piqa social_i_qa hellaswag winogrande ARC-Challenge ARC-Easy openbookqa; do
         CUDA_VISIBLE_DEVICES=$GPU python commonsense_evaluate.py \

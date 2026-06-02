@@ -44,7 +44,7 @@ PEFT_VERSION = tuple(int(x) for x in peft.__version__.split(".")[:2])
 
 def _make_config(adapter_name: str, lora_r: int, lora_alpha: int,
                  lora_dropout: float, target_modules: List[str]):
-    if adapter_name in ("lora", "delora", "randlora", "gralora"):
+    if adapter_name in ("lora", "delora", "randlora", "gralora", "loraga"):
         kwargs = dict(
             r=lora_r,
             lora_alpha=lora_alpha,
@@ -62,10 +62,14 @@ def _make_config(adapter_name: str, lora_r: int, lora_alpha: int,
         elif adapter_name == "gralora":
             from peft import GraLoraConfig
             return GraLoraConfig(**kwargs)
+        elif adapter_name == "loraga":
+            # LoRA-GA: gradient-approximation initialization (HF PEFT >= 0.12.0)
+            return LoraConfig(**kwargs, init_lora_weights="lora-ga")
         else:
             return LoraConfig(**kwargs)
     else:
-        raise ValueError(f"Unknown adapter_name: {adapter_name}")
+        raise ValueError(f"Unknown adapter_name: {adapter_name}. "
+                         f"Choices: lora, delora, randlora, gralora, loraga")
 
 
 def train(
@@ -149,30 +153,42 @@ def train(
     else:
         data = load_dataset(data_path)
 
-    train_data = data["train"].shuffle(seed=seed).map(
-        lambda x: tokenize(generate_prompt(x)), remove_columns=data["train"].column_names
-    )
+    if val_set_size > 0:
+        splits = data["train"].train_test_split(test_size=val_set_size, seed=seed)
+        train_data = splits["train"].shuffle(seed=seed).map(
+            lambda x: tokenize(generate_prompt(x)), remove_columns=splits["train"].column_names
+        )
+        val_data = splits["test"].map(
+            lambda x: tokenize(generate_prompt(x)), remove_columns=splits["test"].column_names
+        )
+    else:
+        train_data = data["train"].shuffle(seed=seed).map(
+            lambda x: tokenize(generate_prompt(x)), remove_columns=data["train"].column_names
+        )
+        val_data = None
 
     trainer = transformers.Trainer(
         model=model,
         train_dataset=train_data,
+        eval_dataset=val_data,
         args=transformers.TrainingArguments(
             per_device_train_batch_size=micro_batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             num_train_epochs=num_epochs,
             learning_rate=learning_rate,
             fp16=True,
-            logging_steps=eval_step,
-            evaluation_strategy="no",
+            logging_steps=10,
+            evaluation_strategy="steps" if val_data is not None else "no",
+            eval_steps=eval_step if val_data is not None else None,
             save_strategy="steps",
             save_steps=save_step,
             output_dir=output_dir,
-            save_total_limit=1,
-            load_best_model_at_end=False,
+            save_total_limit=3,
+            load_best_model_at_end=(val_data is not None),
             ddp_find_unused_parameters=False,
-            report_to="none",
-        ),
-        data_collator=transformers.DataCollatorForSeq2Seq(
+            report_to=["tensorboard"],
+            seed=seed,
+        ),        data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True
         ),
     )

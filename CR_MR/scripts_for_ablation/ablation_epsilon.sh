@@ -4,6 +4,7 @@
 # Usage: bash ablation_epsilon.sh [GPU_ID]
 
 GPU=${1:-0}
+SEED=${2:-42}
 BASE_MODEL="huggyllama/llama-7b"
 DATA_PATH="commonsense_170k.json"
 RANK=16
@@ -21,7 +22,9 @@ for EPS in 1e-8 1e-6 1e-4 1e-2; do
         --eval_step 80 --save_step 80 --adapter_name lomap \
         --target_modules '["q_proj", "k_proj", "v_proj", "up_proj", "down_proj"]' \
         --lora_r $RANK --lora_alpha $ALPHA \
-        --use_gradient_checkpointing
+        --map_eps "$EPS" \
+        --use_gradient_checkpointing \
+        --seed $SEED
 
     # Evaluate all 8 benchmarks
     for DATASET in boolq piqa social_i_qa hellaswag winogrande ARC-Challenge ARC-Easy openbookqa; do

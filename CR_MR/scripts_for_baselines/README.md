@@ -11,29 +11,57 @@ All baselines use:
 - **Same seed**: run ≥3 seeds and report mean ± std
 - **Same evaluation**: `commonsense_evaluate.py` for CR, `run_glue.py` for GLUE
 
+## Data Leakage Note (Known Issue in Established Protocol)
+
+The `commonsense_170k.json` training set follows the protocol of Hu et al. (2023) "LLM-Adapters".
+A fraction of the test-set questions appear verbatim in the training mixture:
+- HellaSwag: ~29 % of test examples
+- WinoGrande: ~26 % of test examples
+- BoolQ: ~3.5 %
+- Other tasks: < 1 %
+
+This is a **known property of the LLM-Adapters benchmark** used by all prior work
+(LoRA, DoRA, PiSSA, MiLoRA, FLoRA, etc.). Because every method trains on the same data,
+the comparison remains fair within the benchmark. However, absolute numbers on HellaSwag
+and WinoGrande are inflated relative to truly held-out evaluation.
+
+**For the paper**: do not claim absolute SoTA on HellaSwag/WinoGrande; instead highlight
+relative gains over baselines, and note the established protocol in the experimental setup.
+
 ## Script Overview
 
 | Script | Method | Tasks | Source |
 |--------|--------|-------|--------|
 | `run_delora_cr.sh` | DeLoRA | CR (LLaMA-7B) | HF PEFT >= 0.12.0 |
 | `run_delora_glue.sh` | DeLoRA | GLUE (DeBERTa-v3) | HF PEFT >= 0.12.0 |
-| `run_bidora_cr.sh` | BiDoRA | CR (LLaMA-7B) | github.com/t2ance/BiDoRA |
-| `run_loraga_cr.sh` | LoRA-GA | CR (LLaMA-7B) | github.com/Outsider565/LoRA-GA |
+| `run_bidora_cr.sh` | DoRA proxy (CR) | CR (LLaMA-7B) | This repo's peft fork |
+| `run_bidora_glue.sh` | BiDoRA | GLUE (RoBERTa) | github.com/t2ance/BiDoRA |
+| `run_loraga_cr.sh` | LoRA-GA | CR (LLaMA-7B) | HF PEFT >= 0.12.0 (`init_lora_weights="lora-ga"`) |
 | `run_randlora_gralora_cr.sh` | RandLoRA, GraLoRA | CR (LLaMA-7B) | HF PEFT >= 0.13.0 |
+
+## Note on BiDoRA
+
+The official BiDoRA repo (https://github.com/t2ance/BiDoRA) targets NLU tasks (GLUE with
+RoBERTa/DeBERTa) and does **not** provide a commonsense reasoning script for LLaMA.
+- For CR: `run_bidora_cr.sh` runs DoRA (the closest available baseline) as a proxy.
+- For GLUE/NLU: `run_bidora_glue.sh` uses the official BiDoRA repo.
+
+## Note on LoRA-GA
+
+The official LoRA-GA repo (https://github.com/Outsider565/LoRA-GA) uses Hydra config
+management. For commonsense reasoning we use HF PEFT's `init_lora_weights="lora-ga"`
+inside our standard `finetune_peft.py` pipeline, which implements the same
+gradient-approximation initialization.
 
 ## Installation
 
 ```bash
-# DeLoRA, RandLoRA, GraLoRA via HF PEFT
-pip install "peft>=0.12.0"
+# DeLoRA, RandLoRA, GraLoRA, LoRA-GA via HF PEFT
+pip install "peft>=0.13.0"
 
-# BiDoRA — official implementation
+# BiDoRA — official implementation (for GLUE only)
 git clone https://github.com/t2ance/BiDoRA ../../BiDoRA
-pip install -e ../../BiDoRA/
-
-# LoRA-GA — official implementation
-git clone https://github.com/Outsider565/LoRA-GA ../../LoRA-GA
-# follow LoRA-GA's own installation guide
+pip install -r ../../BiDoRA/requirements.txt
 ```
 
 ## Multi-seed Evaluation
@@ -44,7 +72,7 @@ for SEED in 6 42 123; do
     bash run_delora_cr.sh 16 32 0 $SEED
 done
 
-python aggregate_results.py --method delora --output output/delora/
+python aggregate_results.py --method delora_cr --rank 16 --seeds 6 42 123
 ```
 
 ## Parameter Budget Matching

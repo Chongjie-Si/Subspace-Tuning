@@ -4,6 +4,7 @@
 # Usage: bash ablation_rank.sh [GPU_ID]
 
 GPU=${1:-0}
+SEED=${2:-42}
 BASE_MODEL="huggyllama/llama-7b"
 DATA_PATH="commonsense_170k.json"
 
@@ -22,12 +23,17 @@ for RANK in 2 4 8 16 32 64; do
             --eval_step 80 --save_step 80 --adapter_name $ADAPTER \
             --target_modules '["q_proj", "k_proj", "v_proj", "up_proj", "down_proj"]' \
             --lora_r $RANK --lora_alpha $ALPHA \
-            --use_gradient_checkpointing
+            --use_gradient_checkpointing \
+            --seed $SEED
+
+        # Evaluate: LoRA adapter uses "LoRA"; LoMAP uses "LoMAP"
+        EVAL_ADAPTER="LoRA"
+        if [ "$ADAPTER" = "lomap" ]; then EVAL_ADAPTER="LoMAP"; fi
 
         for DATASET in boolq piqa social_i_qa hellaswag winogrande ARC-Challenge ARC-Easy openbookqa; do
             CUDA_VISIBLE_DEVICES=$GPU python commonsense_evaluate.py \
                 --model LLaMA-7B \
-                --adapter LoRA \
+                --adapter $EVAL_ADAPTER \
                 --dataset $DATASET \
                 --base_model "$BASE_MODEL" \
                 --batch_size 1 \

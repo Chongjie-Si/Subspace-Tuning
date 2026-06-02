@@ -85,6 +85,8 @@ def train(
         wandb_watch: str = "",  # options: false | gradients | all
         wandb_log_model: str = "",  # options: false | true
         resume_from_checkpoint: str = None,  # either training checkpoint or final adapter
+        seed: int = 42,
+        use_tensorboard: bool = True,
 ):
     print(
         f"Finetuning model with params:\n"
@@ -123,6 +125,7 @@ def train(
     assert (
         base_model
     ), "Please specify a --base_model, e.g. --base_model='decapoda-research/llama-7b-hf'"
+    transformers.set_seed(seed)
     gradient_accumulation_steps = batch_size // micro_batch_size
 
     device_map = "auto"
@@ -143,6 +146,14 @@ def train(
         os.environ["WANDB_WATCH"] = wandb_watch
     if len(wandb_log_model) > 0:
         os.environ["WANDB_LOG_MODEL"] = wandb_log_model
+
+    # Determine reporting backends
+    if use_wandb:
+        report_backends = ["wandb"]
+    elif use_tensorboard:
+        report_backends = ["tensorboard"]
+    else:
+        report_backends = ["none"]
 
     if load_8bit:
         model = AutoModelForCausalLM.from_pretrained(
@@ -297,7 +308,7 @@ def train(
 
     if val_set_size > 0:
         train_val = data["train"].train_test_split(
-            test_size=val_set_size, shuffle=True, seed=42
+            test_size=val_set_size, shuffle=True, seed=seed
         )
         train_data = (
             train_val["train"].shuffle().map(generate_and_tokenize_prompt)
@@ -337,8 +348,9 @@ def train(
             load_best_model_at_end=True if val_set_size > 0 else False,
             ddp_find_unused_parameters=False if ddp else None,
             group_by_length=group_by_length,
-            report_to="wandb" if use_wandb else None,
+            report_to=report_backends,
             run_name=wandb_run_name if use_wandb else None,
+            seed=seed,
         ),
         data_collator=transformers.DataCollatorForSeq2Seq(
             tokenizer, pad_to_multiple_of=8, return_tensors="pt", padding=True

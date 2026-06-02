@@ -82,8 +82,8 @@ def main(
     batches = create_batch(dataset, args.batch_size)
     tokenizer, model = load_model(args)
 
-    if args.adapter == "LoRA" or args.adapter == "DoRA":
-        print("Merge LoRA/DoRA weights into the original weights")
+    if args.adapter in ("LoRA", "DoRA", "LoMAP"):
+        print(f"Merge {args.adapter} weights into the original weights")
         key_list = [(key,module) for key, module in model.model.named_modules()]
         for key,module in key_list:
             if isinstance(model.peft_config.target_modules, str):
@@ -97,24 +97,26 @@ def main(
                         wdecompose_target_module_found = re.fullmatch(model.peft_config.Wdecompose_target_modules, key)
                     else:
                         wdecompose_target_module_found = any(key.endswith(target_key) for target_key in model.peft_config.Wdecompose_target_modules)
-                else: 
+                else:
                     wdecompose_target_module_found = False
             else:
                 wdecompose_target_module_found = False
 
             if target_module_found:
                 print(f"found {key}")
-                # print(f"module.merged {module.merged}")
-                # print(f"module.merge_weights {module.merge_weights}")
                 module.merge_weights = True
                 module.train(mode=False)
 
             elif wdecompose_target_module_found:
                 print(f"found {key}")
-                # print(f"module.merged {module.merged}")
-                # print(f"module.merge_weights {module.merge_weights}")
                 module.merge_weights = True
                 module.train(mode=False)
+
+    elif args.adapter in ("DeLoRA", "BiDoRA", "LoRA-GA", "RandLoRA", "GraLoRA"):
+        # These checkpoints were saved via HF PEFT; PeftModel.from_pretrained
+        # already loads the adapter correctly. No manual merge needed — the
+        # adapter runs in-place during inference.
+        print(f"{args.adapter}: HF-PEFT checkpoint loaded, no manual merge needed.")
 
 
     total = len(batches)
@@ -212,7 +214,8 @@ def parse_args():
     parser.add_argument('--dataset', choices=["boolq", "piqa", "social_i_qa", "hellaswag", "winogrande", "ARC-Challenge", "ARC-Easy", "openbookqa"],
                         required=True)
     parser.add_argument('--model', choices=['LLaMA-7B', "LLaMA-13B",'LLaMA2-7B','LLaMA3-8B'], required=True)
-    parser.add_argument('--adapter', choices=['LoRA', 'AdapterP', 'AdapterH', 'Parallel', 'DoRA'],
+    parser.add_argument('--adapter', choices=['LoRA', 'AdapterP', 'AdapterH', 'Parallel', 'DoRA', 'LoMAP',
+                                              'DeLoRA', 'BiDoRA', 'LoRA-GA', 'RandLoRA', 'GraLoRA'],
                         required=True)
     parser.add_argument('--base_model', required=True)
     parser.add_argument('--lora_weights', required=True)
