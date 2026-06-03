@@ -66,30 +66,52 @@ run_task() {
     echo ""; echo "=== $t  lora_type=$LORA_TYPE  r=$RANK  seed=$seed ==="
     echo "Output: $out"
 
+    # NLU fork uses internal names: frd = standard LoRA, svd = AdaLoRA, map = LoMAP.
+    # User-facing values lora/adalora/map get translated here.
+    local internal_lora_type
+    case "$LORA_TYPE" in
+        lora)    internal_lora_type="frd" ;;
+        adalora) internal_lora_type="svd" ;;
+        map)     internal_lora_type="map" ;;
+        frd|svd) internal_lora_type="$LORA_TYPE" ;;
+        *) echo "ERROR: unknown lora_type=$LORA_TYPE (use lora|adalora|map)"; return 1 ;;
+    esac
+
+    # Save/eval cadence: keep evaluation frequent (paper-style), but save sparsely
+    # to avoid I/O thrash (each ckpt = ~715MB of full model state). Long tasks
+    # (mnli/qqp) save every 1000 steps; short tasks every 200.
+    local save_steps=200
+    case "$t" in
+        mnli|qqp) save_steps=1000 ;;
+        qnli)     save_steps=500  ;;
+    esac
+
     CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
     "$VENV" \
         "$NLU_DIR/examples/text-classification/run_glue.py" \
         --model_name_or_path "$MODEL" \
         --task_name "$t" \
-        --apply_lora --lora_type "$LORA_TYPE" \
+        --apply_lora --lora_type "$internal_lora_type" \
         --lora_r "$RANK" --lora_module "$MODULES" --lora_alpha "$ALPHA" \
         --do_train --do_eval \
         --max_seq_length "${SEQ_LEN[$t]}" \
         --per_device_train_batch_size 32 \
+        --per_device_eval_batch_size 64 \
         --learning_rate "${LR[$t]}" \
         --num_train_epochs "${EPOCHS[$t]}" \
         --warmup_ratio 0.1 \
         --cls_dropout "${CLS_DROP[$t]}" \
         --weight_decay 0.00 \
         --evaluation_strategy steps --eval_steps 100 \
-        --save_strategy steps --save_steps 200 \
-        --save_total_limit 3 \
+        --save_strategy steps --save_steps "$save_steps" \
+        --save_total_limit 2 \
         --load_best_model_at_end \
         --metric_for_best_model "${BEST_METRIC[$t]}" \
         --greater_is_better "${GREATER_IS_BETTER[$t]}" \
-        --logging_steps 10 \
+        --logging_steps 50 \
         --tb_writter_loginterval 50 \
         --report_to tensorboard \
+        --skip_memory_metrics \
         --seed "$seed" \
         --root_output_dir "$out"
 

@@ -89,12 +89,21 @@ for (( i=0; i<NGPU; i++ )); do
                     qnli)     save_steps=1000 ;;
                 esac
 
+                # Translate user-facing method to NLU fork's internal name
+                # (frd = standard LoRA, svd = AdaLoRA, map = LoMAP)
+                case "$method" in
+                    lora)    internal_lora_type="frd" ;;
+                    adalora) internal_lora_type="svd" ;;
+                    map)     internal_lora_type="map" ;;
+                    *) echo "ERROR unknown method=$method"; continue ;;
+                esac
+
                 CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
                 "$VENV" \
                     "$NLU_DIR/examples/text-classification/run_glue.py" \
                     --model_name_or_path "$MODEL" \
                     --task_name "$t" \
-                    --apply_lora --lora_type "$method" \
+                    --apply_lora --lora_type "$internal_lora_type" \
                     --lora_r "$RANK" --lora_module "$MODULES" --lora_alpha "$ALPHA" \
                     --do_train --do_eval \
                     --max_seq_length "${SEQ_LEN[$t]}" \
