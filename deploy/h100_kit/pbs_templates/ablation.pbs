@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -N lomap_ablation
+#PBS -l select=1:ncpus=16:ngpus=8:mem=200gb
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -o logs/ablation.log
+set -e
+REPO_ROOT=${REPO_ROOT:-$PBS_O_WORKDIR}
+cd "$REPO_ROOT"
+source .venv/bin/activate
+export PYTHONPATH="$REPO_ROOT/CR_MR/peft/src:$PYTHONPATH"
+export TOKENIZERS_PARALLELISM=false
+mkdir -p logs
+bash deploy/h100_kit/scripts/run_ablation_grid.sh 0,1,2,3,4,5,6,7

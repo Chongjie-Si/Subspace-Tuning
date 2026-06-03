@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -N lomap_nlu_large_r8
+#PBS -l select=1:ncpus=16:ngpus=8:mem=160gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o logs/nlu_large_r8.log
+set -e
+REPO_ROOT=${REPO_ROOT:-$PBS_O_WORKDIR}
+cd "$REPO_ROOT"
+source .venv/bin/activate
+export PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib:$PYTHONPATH"
+export TOKENIZERS_PARALLELISM=false
+mkdir -p logs
+bash deploy/h100_kit/scripts/run_nlu_grid.sh large 8 6,7,8 0,1,2,3,4,5,6,7

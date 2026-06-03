@@ -1,0 +1,30 @@
+#!/bin/bash
+#PBS -N lomap_nlu_base_r2
+#PBS -l select=1:ncpus=16:ngpus=8:mem=128gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o logs/nlu_base_r2.log
+#
+# NLU Table 1 — DeBERTa-v3-base, r=2
+# 8 tasks × (LoMAP, LoRA, DoRA) × 3 seeds = 72 runs across 8 GPUs (~3 hours)
+#
+# Submit:  qsub deploy/h100_kit/pbs_templates/nlu_base_r2.pbs
+# Override:  qsub -v REPO_ROOT=/path/to/Subspace-Tuning ...
+
+set -e
+REPO_ROOT=${REPO_ROOT:-$PBS_O_WORKDIR}
+cd "$REPO_ROOT"
+
+# Activate environment
+source .venv/bin/activate
+export PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib:$PYTHONPATH"
+
+mkdir -p logs
+
+# Pre-imports for triton/dynamo race fix (already inside run_glue.py, this is belt-and-suspenders)
+export TOKENIZERS_PARALLELISM=false
+
+# Launch one task per GPU in parallel with `nohup ... &` and a wait at the end.
+# 8 GPUs × 3 methods × ~3 tasks each ≈ 72 runs total.
+
+bash deploy/h100_kit/scripts/run_nlu_grid.sh base 2 6,7,8 0,1,2,3,4,5,6,7

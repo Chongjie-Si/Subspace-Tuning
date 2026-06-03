@@ -1,0 +1,16 @@
+#!/bin/bash
+#PBS -N lomap_cr_llama7b
+#PBS -l select=1:ncpus=16:ngpus=8:mem=200gb
+#PBS -l walltime=24:00:00
+#PBS -j oe
+#PBS -o logs/cr_llama7b.log
+set -e
+REPO_ROOT=${REPO_ROOT:-$PBS_O_WORKDIR}
+cd "$REPO_ROOT"
+source .venv/bin/activate
+export PYTHONPATH="$REPO_ROOT/CR_MR/peft/src:$PYTHONPATH"
+export TOKENIZERS_PARALLELISM=false
+mkdir -p logs
+
+# LLaMA-7B: r ∈ {4,8,16,32}, methods = lomap + lora + dora (DoRA paper baseline)
+bash deploy/h100_kit/scripts/run_cr_grid.sh llama-7b 4,8,16,32 lomap,lora,dora 0,1,2,3,4,5,6,7
