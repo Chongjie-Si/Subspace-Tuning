@@ -86,7 +86,28 @@ run_task() {
         qnli)     save_steps=500  ;;
     esac
 
-    CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
+    # Eval batch size: scale down for long-sequence tasks to avoid OOM on 16GB GPUs.
+    # qnli uses max_seq_length=512, rte/qqp=320 — eval batch 64 at seq 512 OOMs a 4080.
+    local eval_bs=64
+    case "$t" in
+        qnli)          eval_bs=16 ;;
+        rte|qqp|mrpc)  eval_bs=32 ;;
+        mnli)          eval_bs=32 ;;
+    esac
+
+    # Train batch size + grad accumulation: DeBERTa-v2 disentangled attention is
+    # O(seq^2) in memory. At seq 512 (qnli), train batch 32 OOMs a 16GB GPU in the
+    # attention forward. Use smaller micro-batch + accumulation to keep effective
+    # batch = 32 (paper setting) while fitting in memory.
+    local train_bs=32 accum=1
+    case "$t" in
+        qnli)      train_bs=8;  accum=4 ;;   # 8*4 = 32, seq 512
+        qqp|mnli)  train_bs=16; accum=2 ;;   # 16*2 = 32, seq 320/256
+        rte)       train_bs=16; accum=2 ;;   # seq 320
+    esac
+
+    CUDA_VISIBLE_DEVICES=$GPU PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+    PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
     "$VENV" \
         "$NLU_DIR/examples/text-classification/run_glue.py" \
         --model_name_or_path "$MODEL" \
@@ -95,8 +116,9 @@ run_task() {
         --lora_r "$RANK" --lora_module "$MODULES" --lora_alpha "$ALPHA" \
         --do_train --do_eval \
         --max_seq_length "${SEQ_LEN[$t]}" \
-        --per_device_train_batch_size 32 \
-        --per_device_eval_batch_size 64 \
+        --per_device_train_batch_size "$train_bs" \
+        --gradient_accumulation_steps "$accum" \
+        --per_device_eval_batch_size "$eval_bs" \
         --learning_rate "${LR[$t]}" \
         --num_train_epochs "${EPOCHS[$t]}" \
         --warmup_ratio 0.1 \
