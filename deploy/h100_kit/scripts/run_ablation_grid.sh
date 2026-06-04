@@ -54,12 +54,17 @@ for (( i=0; i<NGPU; i++ )); do
                 label="${line%%|*}"
                 flags="${line#*|}"
                 out="$CR_DIR/output/ablation/${label}"
-                [ -f "$out/adapter_model.bin" ] && { idx=$((idx+1)); continue; }
+                if [ -f "$out/adapter_model.bin" ]; then
+                    sz=$(stat -c %s "$out/adapter_model.bin" 2>/dev/null || echo 0)
+                    if [ "$sz" -ge 1024 ]; then idx=$((idx+1)); continue; fi
+                    rm -f "$out/adapter_model.bin"   # corrupt/truncated → rerun
+                fi
 
                 LOG="$REPO_ROOT/logs/abl_${label}_gpu${GPU}.log"
                 echo "[GPU $GPU] ablation $label" | tee -a "$REPO_ROOT/logs/abl_dispatch.log"
 
-                CUDA_VISIBLE_DEVICES=$GPU "$VENV" finetune.py \
+                CUDA_VISIBLE_DEVICES=$GPU PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+                "$VENV" finetune.py \
                     --base_model "$BASE" \
                     --data_path "$DATA" \
                     --output_dir "$out" \

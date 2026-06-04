@@ -53,7 +53,17 @@ for method in "${METHODS[@]}"; do
         esac
         out="$CR_DIR/output/${MODEL_KEY}_${method}_r${rank}_a${alpha}"
         adapter_done="$out/adapter_model.bin"
-        [ -f "$adapter_done" ] && continue
+        # Treat a present-but-tiny adapter as corrupt (truncated by preemption):
+        # a real LoRA adapter is at least tens of KB. Re-queue if zero/missing/tiny.
+        if [ -f "$adapter_done" ]; then
+            sz=$(stat -c %s "$adapter_done" 2>/dev/null || echo 0)
+            if [ "$sz" -lt 1024 ]; then
+                echo "  corrupt adapter ($sz B), re-queue: $out"
+                rm -f "$adapter_done"
+            else
+                continue
+            fi
+        fi
         echo "$method $rank $alpha $out" >> "$JOBS_FILE"
     done
 done
@@ -74,7 +84,8 @@ for (( i=0; i<NGPU; i++ )); do
                 LOG="$REPO_ROOT/logs/cr_${MODEL_KEY}_${method}_r${rank}_gpu${GPU}.log"
                 echo "[GPU $GPU] CR train $method r=$rank → $out" | tee -a "$REPO_ROOT/logs/cr_dispatch.log"
 
-                CUDA_VISIBLE_DEVICES=$GPU "$VENV" finetune.py \
+                CUDA_VISIBLE_DEVICES=$GPU PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+                "$VENV" finetune.py \
                     --base_model "$BASE" \
                     --data_path "$DATA" \
                     --output_dir "$out" \

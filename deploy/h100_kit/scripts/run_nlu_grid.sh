@@ -51,6 +51,15 @@ TASKS=(cola sst2 mrpc rte stsb qnli qqp mnli)
 
 mkdir -p "$NLU_DIR/output/glue" logs
 
+# Repair any corruption from a previous preemption/reboot BEFORE deciding what
+# is "done": delete truncated checkpoints and restore best_metric into
+# all_results.json. Without this, a torn all_results.json would either be
+# treated as "done" (skipping a needed rerun) or crash the resume.
+if [ -f "$REPO_ROOT/fix_corrupted_results.sh" ]; then
+    echo "Repairing any preemption/reboot corruption first..."
+    bash "$REPO_ROOT/fix_corrupted_results.sh" || true
+fi
+
 # Build job list
 JOBS_FILE=$(mktemp)
 for method in "${METHODS[@]}"; do
@@ -89,6 +98,18 @@ for (( i=0; i<NGPU; i++ )); do
                     qnli)     save_steps=1000 ;;
                 esac
 
+                # Batch sizing: 80GB H100 fits base/large at batch 32 even at seq
+                # 512, but keep accumulation-based fallback for very long-seq +
+                # large model so the same script is safe on smaller cards too.
+                # effective batch stays 32 (paper setting).
+                train_bs=32; accum=1; eval_bs=64
+                if [ "$SIZE" = "large" ]; then
+                    case "$t" in
+                        qnli) train_bs=16; accum=2; eval_bs=32 ;;
+                        qqp|mnli|rte) eval_bs=32 ;;
+                    esac
+                fi
+
                 # Translate user-facing method to NLU fork's internal name
                 # (frd = standard LoRA, svd = AdaLoRA, map = LoMAP)
                 case "$method" in
@@ -98,7 +119,8 @@ for (( i=0; i<NGPU; i++ )); do
                     *) echo "ERROR unknown method=$method"; continue ;;
                 esac
 
-                CUDA_VISIBLE_DEVICES=$GPU PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
+                CUDA_VISIBLE_DEVICES=$GPU PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True \
+                PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib" \
                 "$VENV" \
                     "$NLU_DIR/examples/text-classification/run_glue.py" \
                     --model_name_or_path "$MODEL" \
@@ -107,8 +129,9 @@ for (( i=0; i<NGPU; i++ )); do
                     --lora_r "$RANK" --lora_module "$MODULES" --lora_alpha "$ALPHA" \
                     --do_train --do_eval \
                     --max_seq_length "${SEQ_LEN[$t]}" \
-                    --per_device_train_batch_size 32 \
-                    --per_device_eval_batch_size 64 \
+                    --per_device_train_batch_size "$train_bs" \
+                    --gradient_accumulation_steps "$accum" \
+                    --per_device_eval_batch_size "$eval_bs" \
                     --learning_rate "${LR[$t]}" \
                     --num_train_epochs "${EPOCHS[$t]}" \
                     --warmup_ratio 0.1 \
