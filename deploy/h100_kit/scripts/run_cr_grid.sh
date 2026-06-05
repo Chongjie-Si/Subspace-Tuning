@@ -118,13 +118,21 @@ for method in "${METHODS[@]}"; do
         esac
         out="$CR_DIR/output/${MODEL_KEY}_${method}_r${rank}_a${alpha}"
         [ -f "$out/adapter_model.bin" ] || { echo "skip $out (no adapter)"; continue; }
+        # commonsense_evaluate.py expects exact-case adapter names (LoRA/DoRA/LoMAP),
+        # validated via argparse choices — do NOT uppercase.
+        case "$method" in
+            lora)  adapter_arg="LoRA"  ;;
+            dora)  adapter_arg="DoRA"  ;;
+            lomap) adapter_arg="LoMAP" ;;
+            *)     adapter_arg="$method" ;;
+        esac
         for ds in "${DATASETS[@]}"; do
             done_marker="$out/${ds}.txt"
             [ -f "$done_marker" ] && continue
             # Use first GPU for sequential eval
             CUDA_VISIBLE_DEVICES=${GPUS[0]} "$VENV" "$CR_DIR/commonsense_evaluate.py" \
                 --model "$MODEL_TAG" \
-                --adapter "$(echo $method | tr '[:lower:]' '[:upper:]')" \
+                --adapter "$adapter_arg" \
                 --dataset "$ds" \
                 --base_model "$BASE" \
                 --batch_size 1 \
