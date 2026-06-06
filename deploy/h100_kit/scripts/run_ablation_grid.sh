@@ -87,6 +87,9 @@ wait
 # Eval all
 echo ""
 echo "Evaluating ablations on 8 CR benchmarks..."
+# commonsense_evaluate.py uses relative dataset/<bench>/test.json — must run with
+# cwd = CR_MR/ (the training subshells cd'd in, but this main-shell loop did not).
+cd "$CR_DIR"
 DATASETS=(boolq piqa social_i_qa hellaswag winogrande ARC-Challenge ARC-Easy openbookqa)
 for label_line in $(cat "$JOBS_FILE"); do
     label="${label_line%%|*}"

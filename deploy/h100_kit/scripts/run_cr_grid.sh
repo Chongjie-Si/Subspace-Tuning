@@ -109,6 +109,11 @@ echo ""
 echo "================================================"
 echo "Evaluating all trained adapters..."
 echo "================================================"
+# commonsense_evaluate.py reads test sets via the RELATIVE path
+# dataset/<bench>/test.json and writes experiment/<...>.json, so it MUST run
+# with cwd = CR_MR/. The training subshells cd'd into CR_DIR but that did not
+# affect this (main-shell) eval loop — cd here explicitly.
+cd "$CR_DIR"
 DATASETS=(boolq piqa social_i_qa hellaswag winogrande ARC-Challenge ARC-Easy openbookqa)
 for method in "${METHODS[@]}"; do
     for rank in "${RANKS[@]}"; do
