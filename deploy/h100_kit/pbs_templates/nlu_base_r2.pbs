@@ -27,4 +27,4 @@ export TOKENIZERS_PARALLELISM=false
 # Launch one task per GPU in parallel with `nohup ... &` and a wait at the end.
 # 8 GPUs × 3 methods × ~3 tasks each ≈ 72 runs total.
 
-bash deploy/h100_kit/scripts/run_nlu_grid.sh base 2 6,7,8 0,1,2,3,4,5,6,7
+bash deploy/h100_kit/scripts/run_nlu_grid.sh base 2 6,7,8,9,10 0,1,2,3,4,5,6,7

@@ -10,6 +10,9 @@ set -e
 REPO_ROOT="/home/li/Subspace-Tuning"
 LOG="/tmp/boot_resume.log"
 
+# cron starts jobs with SHELL=/bin/sh; tmux inherits this when creating panes.
+export SHELL=/bin/bash
+
 echo "[$(date)] boot_resume invoked" >> "$LOG"
 
 # 1. Wait until the GPU is ready (nvidia-smi can fail right after boot)

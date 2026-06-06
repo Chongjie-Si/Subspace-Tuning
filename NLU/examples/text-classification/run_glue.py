@@ -241,6 +241,14 @@ class ModelArguments:
         default=False,
         metadata={"help": "LoMAP: if True, stop gradient through the normalization denominator."},
     )
+    map_freeze_alpha: Optional[bool] = field(
+        default=False,
+        metadata={"help": "LoMAP: if True, keep map_alpha fixed at ||W||_F (do not learn it)."},
+    )
+    map_lr_scale: Optional[float] = field(
+        default=1.0,
+        metadata={"help": "LoMAP: multiply learning rate of map_alpha and map_beta by this factor (default 1.0)."},
+    )
     apply_adapter: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether to apply adapter or not."},
@@ -553,9 +561,18 @@ def main():
             for dim in param.shape:
                 sub_num_param *= dim  
             num_param += sub_num_param
-    logger.info("Number of Trainable Parameters: %d"%(int(num_param))) 
-    if tb_writter is not None: 
-        tb_writter.add_scalar("train/num_train_param", num_param, 0)   
+    logger.info("Number of Trainable Parameters: %d"%(int(num_param)))
+    if tb_writter is not None:
+        tb_writter.add_scalar("train/num_train_param", num_param, 0)
+
+    # LoMAP option: freeze map_alpha at its initialized value (||W||_F)
+    if model_args.apply_lora and model_args.lora_type == 'map' and model_args.map_freeze_alpha:
+        n_frozen = 0
+        for name, param in model.named_parameters():
+            if 'map_alpha' in name:
+                param.requires_grad = False
+                n_frozen += 1
+        logger.info(f"LoMAP: froze {n_frozen} map_alpha parameters (using fixed ||W||_F)")
 
 
     # Preprocessing the datasets
@@ -703,6 +720,38 @@ def main():
         rankallocator = None
 
     # Initialize our Trainer
+    # If LoMAP requested a separate lr scale for map scalars, build a custom optimizer.
+    custom_optimizers = (None, None)
+    if (model_args.apply_lora and model_args.lora_type == 'map'
+            and abs(model_args.map_lr_scale - 1.0) > 1e-8):
+        from transformers.optimization import AdamW as _AdamW
+        decay_params = []
+        nodecay_params = []
+        map_scalar_params = []
+        for name, p in model.named_parameters():
+            if not p.requires_grad:
+                continue
+            if 'map_alpha' in name or 'map_beta' in name:
+                map_scalar_params.append(p)
+            elif 'bias' in name or 'LayerNorm' in name:
+                nodecay_params.append(p)
+            else:
+                decay_params.append(p)
+        groups = [
+            {'params': decay_params,       'weight_decay': training_args.weight_decay,
+             'lr': training_args.learning_rate},
+            {'params': nodecay_params,     'weight_decay': 0.0,
+             'lr': training_args.learning_rate},
+            {'params': map_scalar_params,  'weight_decay': 0.0,
+             'lr': training_args.learning_rate * model_args.map_lr_scale},
+        ]
+        opt = _AdamW(groups, betas=(training_args.adam_beta1, training_args.adam_beta2),
+                     eps=training_args.adam_epsilon)
+        logger.info(f"LoMAP: custom optimizer — map scalars LR = "
+                    f"{training_args.learning_rate * model_args.map_lr_scale:.2e} "
+                    f"({model_args.map_lr_scale}× base)")
+        custom_optimizers = (opt, None)
+
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -712,8 +761,9 @@ def main():
         tokenizer=tokenizer,
         data_collator=data_collator,
         rankallocator=rankallocator,
-        model_args=model_args, 
-        tb_writter=tb_writter, 
+        model_args=model_args,
+        tb_writter=tb_writter,
+        optimizers=custom_optimizers,
     )
 
 

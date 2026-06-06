@@ -28,6 +28,19 @@ from paper Table 4), `load_best_model_at_end` with the task metric, 3 seeds (6,7
 - Our LoMAP **reproduces the paper's LoMAP numbers** within ~1 pt on every task,
   and **slightly exceeds** them on CoLA (+1.08) and SST-2 (+0.15).
 - Low seed variance throughout (std ≤ 0.72).
+
+### ⚠️ CoLA reproducibility caveat — n=3 is not enough for this task
+Training is **not bit-reproducible** (`use_deterministic_algorithms=False` + cuDNN
+nondeterministic kernels). A re-run of CoLA **seed 6 with identical config** gave
+**69.29** vs the original **72.05** — a 2.76-pt swing from nondeterminism alone, on
+a high-variance small task (8.5k train examples). The reported 72.05 is a genuine
+sample (best checkpoint's true dev Mcc), not fabricated, but **no single CoLA seed
+should be trusted to ±2 pt**.
+
+**Action:** on H100, re-run the high-variance small tasks (CoLA, RTE, MRPC) with
+**≥5 seeds** and report mean ± std / CI. Do NOT cherry-pick single seeds. The
+headline evidence for the paper should come from the lower-variance / larger-gap
+tracks (SST-2/STS-B and especially CR on LLaMA), not from CoLA point estimates.
 - vs the paper's reference LoRA values, LoMAP is ahead on every task (the deltas
   to use in the paper come from comparing this column to the published LoRA row).
 
