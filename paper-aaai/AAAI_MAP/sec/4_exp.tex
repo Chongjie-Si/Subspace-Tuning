@@ -119,8 +119,8 @@ Table \ref{tab:results of commonsense} presents the evaluation results of variou
 We observe several notable trends:
 
 First, LoMAP consistently outperforms all reported PEFT baselines under comparable parameter budgets.
-For instance, under the LLaMA-7B backbone with $r=16$, LoMAP achieves an average accuracy of 77.9, substantially improving over LoRA (70.9); no DoRA result is available at this rank setting.
-At $r=32$, LoMAP further reaches 78.8, surpassing DoRA (78.4) and LoRA-Dash (78.4) under similar parameter budgets.
+For instance, under the LLaMA-7B backbone with $r=16$, LoMAP achieves an average accuracy of 77.9, substantially improving over LoRA (70.9); no DoRA result is reported at this rank setting.
+At $r=32$, LoMAP reaches 78.8, surpassing both DoRA (78.4) and LoRA-Dash (78.4) under similar parameter budgets.
 Notably, even at lower ranks (e.g., $r=4$ or $r=8$), LoMAP yields strong performance, achieving 75.9 at $r=4$ and 76.4 at $r=8$, clearly outperforming the reported AdaLoRA, FLoRA, and DoRA baselines where available.
 Second, LoMAP demonstrates excellent scalability across model sizes. 
 When evaluated on the larger LLaMA3-8B model, LoMAP achieves the highest accuracy of 85.8 at $r=32$, surpassing strong baselines such as DoRA (85.2), and AdaLoRA (82.1). 

@@ -82,7 +82,7 @@ def main(
     batches = create_batch(dataset, args.batch_size)
     tokenizer, model = load_model(args)
 
-    if args.adapter in ("LoRA", "DoRA", "LoMAP"):
+    if args.adapter in ("LoRA", "DoRA", "LoMAP", "DeLoRA"):
         print(f"Merge {args.adapter} weights into the original weights")
         key_list = [(key,module) for key, module in model.model.named_modules()]
         for key,module in key_list:

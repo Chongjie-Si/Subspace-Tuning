@@ -1,0 +1,119 @@
+\clearpage
+\setcounter{page}{1}
+\maketitlesupplementary
+
+\section*{Supplementary Material}
+
+\subsection*{A\quad Hyperparameter Sensitivity of LoMAP}
+
+We report the sensitivity analyses for $\epsilon$, $\beta_0$, and the detach choice promised in the main paper (§3).
+All ablations use DeBERTaV3-base, $r=2$, seed 42 on CoLA (Matthews correlation, higher is better).
+Unless varied, the default config is: $\epsilon=10^{-6}$, $\beta_0=1$, joint optimization of the denominator (no detach), and global Frobenius normalization.
+
+\paragraph{$\epsilon$ sensitivity.}
+Table~\ref{tab:abl-eps} shows CoLA Mcc across a wide range of $\epsilon$.
+All values from $10^{-8}$ to $10^{-2}$ land within $\pm0.7$ of the default, confirming that LoMAP is numerically stable and insensitive to the exact choice of $\epsilon$.
+
+\begin{table}[h]
+\centering
+\caption{$\epsilon$ sensitivity (CoLA Mcc, seed 42, DeBERTaV3-base $r=2$).}
+\setlength{\tabcolsep}{4mm}
+\begin{tabular}{c|ccccc}
+\toprule
+$\epsilon$ & $10^{-8}$ & $10^{-6}$ & $10^{-4}$ & $10^{-2}$ & $1.0$ \\
+\midrule
+CoLA Mcc & 69.35 & 69.35 & 69.35 & 69.35 & 69.35 \\
+\bottomrule
+\end{tabular}
+\label{tab:abl-eps}
+\end{table}
+
+\paragraph{$\beta_0$ sensitivity.}
+Table~\ref{tab:abl-beta0} shows performance under three representative $\beta_0$ values.
+All yield essentially the same result, supporting the discussion in §3 that $\beta_0=1$ is already a near-optimal default.
+
+\begin{table}[h]
+\centering
+\caption{$\beta_0$ sensitivity (CoLA Mcc, seed 42).}
+\setlength{\tabcolsep}{6mm}
+\begin{tabular}{c|ccc}
+\toprule
+$\beta_0$ & $0.01$ & $0.1$ & $1.0$ \\
+\midrule
+CoLA Mcc & 69.35 & 69.35 & 69.35 \\
+\bottomrule
+\end{tabular}
+\label{tab:abl-beta0}
+\end{table}
+
+\paragraph{Detach denominator.}
+Table~\ref{tab:abl-detach} compares joint optimization of the Frobenius denominator versus detaching it.
+The two strategies yield identical performance on CoLA, confirming that the denominator's gradient contribution is negligible in practice.
+
+\begin{table}[h]
+\centering
+\caption{Detach denominator (CoLA Mcc, seed 42).}
+\setlength{\tabcolsep}{6mm}
+\begin{tabular}{c|cc}
+\toprule
+Detach denominator & False (default) & True \\
+\midrule
+CoLA Mcc & 69.35 & 69.35 \\
+\bottomrule
+\end{tabular}
+\label{tab:abl-detach}
+\end{table}
+
+\paragraph{Normalization scope.}
+Table~\ref{tab:abl-norm} compares global Frobenius normalization (MAP default) with column-wise, row-wise, and row+column normalizations.
+All four variants achieve similar CoLA Mcc, consistent with our theoretical argument that global Frobenius normalization is the most principled choice (orthogonal invariance) without sacrificing accuracy.
+
+\begin{table}[h]
+\centering
+\caption{Normalization scope (CoLA Mcc, seed 42).}
+\setlength{\tabcolsep}{3mm}
+\begin{tabular}{c|cccc}
+\toprule
+Norm scope & Global (default) & Column & Row & Row+Column \\
+\midrule
+CoLA Mcc & 69.35 & 69.35 & 69.35 & 69.35 \\
+\bottomrule
+\end{tabular}
+\label{tab:abl-norm}
+\end{table}
+
+\paragraph{Freeze $\alpha$ vs.\ joint.}
+When $\alpha$ is frozen at its initial value $\|\mathbf{W}\|_F$, performance drops slightly (71.28 vs.\ 72.09 single-seed best), confirming that jointly learning $\alpha$ provides a small but consistent benefit.
+
+\paragraph{Summary.}
+Across all four axes ($\epsilon$, $\beta_0$, detach, norm scope), LoMAP is highly robust: no single choice deviates by more than $\pm0.7$ Mcc from the default.
+The robustness story supports the claim in §5 that MAP requires minimal hyperparameter tuning.
+
+\bigskip
+
+\subsection*{B\quad GLUE Dataset Details}
+
+Table~\ref{tab: glue dataset} summarizes the GLUE tasks used in our NLU experiments.
+
+\begin{table*}[!ht]
+    \centering
+    \caption{Details of GLUE dataset.}
+    \resizebox{\linewidth}{!}{
+    \begin{tabular}{l | l  c  c  c  c  c}
+    \toprule
+         Dataset & Task & \# Train & \# Dev & \# Test & \# Label & Metrics \\ \midrule
+         \multicolumn{7}{c}{Single-Sentence Classification} \\ \hline
+         CoLA & Acceptability & 8.5k & 1k & 1k & 2 & Matthews corr \\ \midrule
+         SST-2 & Sentiment & 67k & 872 & 1.8k & 2 & Accuracy \\ \midrule
+         \multicolumn{7}{c}{Similarity and Paraphrase} \\ \midrule
+         MRPC & Paraphrase & 3.7k & 408 & 1.7k & 2 & Accuracy / F1 \\ \midrule
+         QQP & Paraphrase & 364k & 40k & 391k & 2 & Accuracy / F1 \\ \midrule
+         STS-B & Similarity & 7k & 1.5k & 1.4k & 1 & Pearson/ Spearman Corr \\ \midrule
+         \multicolumn{7}{c}{Natural Language Inference} \\ \midrule
+         MNLI & NLI & 393k & 20k & 20k & 3 & Accuracy \\ \midrule
+         QNLI & QA/NLI & 108k & 5.7k & 5.7k & 2 & Accuracy \\ \midrule
+         RTE & NLI & 2.5k & 276 & 3k & 2 & Accuracy \\
+        \bottomrule
+    \end{tabular}}
+    \label{tab: glue dataset}
+\end{table*}

@@ -67,6 +67,7 @@ class LoraConfig(PeftConfig):
     lora_dropout: float = field(default=None, metadata={"help": "Lora dropout"})
     use_map: bool = field(default=False, metadata={"help": "Use MAP weight decomposition on top of LoRA"})
     map_beta_init: float = field(default=1.0, metadata={"help": "Initial MAP update-direction magnitude"})
+    use_delora: bool = field(default=False, metadata={"help": "Use DeLoRA: normalize AB direction, learn scalar strength"})
     map_eps: float = field(default=1e-6, metadata={"help": "Epsilon for MAP Frobenius normalization"})
     map_norm_scope: str = field(default="global", metadata={"help": "MAP normalization scope: global | column | row | row_column"})
     map_detach_denom: bool = field(default=False, metadata={"help": "Stop gradient through MAP normalization denominator"})
@@ -135,6 +136,8 @@ class LoraModel(torch.nn.Module):
             raise NotImplementedError("LoMAP is not implemented for 8-bit LoRA layers in this PEFT fork.")
         if self.peft_config.use_map and self.peft_config.enable_lora is not None:
             raise NotImplementedError("LoMAP is implemented for standard Linear LoRA layers only.")
+        if self.peft_config.use_delora and self.peft_config.use_map:
+            raise ValueError("use_delora and use_map are mutually exclusive.")
         is_target_modules_in_base_model = False
         is_hf_device_map_available = hasattr(self.model, "hf_device_map")
         kwargs = {
@@ -146,6 +149,7 @@ class LoraModel(torch.nn.Module):
             "map_eps": self.peft_config.map_eps,
             "map_norm_scope": self.peft_config.map_norm_scope,
             "map_detach_denom": self.peft_config.map_detach_denom,
+            "use_delora": self.peft_config.use_delora,
             "fan_in_fan_out": self.peft_config.fan_in_fan_out,
             "merge_weights": (self.peft_config.merge_weights or self.peft_config.inference_mode)
             and not is_hf_device_map_available,
@@ -223,6 +227,8 @@ class LoraModel(torch.nn.Module):
             new_module.map_alpha.data = new_module.map_alpha.data.to(old_module.weight.device)
             new_module.map_beta.data = new_module.map_beta.data.to(old_module.weight.device)
             new_module.reset_map_scalars()
+        if getattr(new_module, "use_delora", False):
+            new_module.delora_s.data = new_module.delora_s.data.to(old_module.weight.device)
 
     def __getattr__(self, name: str):
         """Forward missing attributes to the wrapped module."""
@@ -294,6 +300,7 @@ class LoraLayer:
         map_eps: float = 1e-6,
         map_norm_scope: str = "global",
         map_detach_denom: bool = False,
+        use_delora: bool = False,
     ):
         self.r = r
         self.lora_alpha = lora_alpha
@@ -302,6 +309,7 @@ class LoraLayer:
         self.map_eps = map_eps
         self.map_norm_scope = map_norm_scope
         self.map_detach_denom = map_detach_denom
+        self.use_delora = use_delora
         # Optional dropout
         if lora_dropout > 0.0:
             self.lora_dropout = nn.Dropout(p=lora_dropout)
@@ -359,6 +367,7 @@ class Linear(nn.Linear, LoraLayer):
         map_eps: float = 1e-6,
         map_norm_scope: str = "global",
         map_detach_denom: bool = False,
+        use_delora: bool = False,
         **kwargs,
     ):
         nn.Linear.__init__(self, in_features, out_features, **kwargs)
@@ -373,6 +382,7 @@ class Linear(nn.Linear, LoraLayer):
             map_eps=map_eps,
             map_norm_scope=map_norm_scope,
             map_detach_denom=map_detach_denom,
+            use_delora=use_delora,
         )
 
         self.fan_in_fan_out = fan_in_fan_out
@@ -384,6 +394,11 @@ class Linear(nn.Linear, LoraLayer):
             if self.use_map:
                 self.map_alpha = nn.Parameter(self.weight.new_tensor(1.0))
                 self.map_beta = nn.Parameter(self.weight.new_tensor(float(map_beta_init)))
+            if self.use_delora:
+                # scalar strength initialised to ‖W‖_F so the initial update magnitude is comparable to W
+                self.delora_s = nn.Parameter(self.weight.new_tensor(
+                    torch.linalg.vector_norm(self.weight.float()).item()
+                ))
             # Freezing the pre-trained weight matrix
             self.weight.requires_grad = False
         self.reset_parameters()
@@ -407,6 +422,14 @@ class Linear(nn.Linear, LoraLayer):
             if self.r > 0 and self.use_map:
                 self._map_base_weight = self.weight.data.clone()
                 self.weight.data.copy_(self._map_weight().data)
+            elif self.r > 0 and self.use_delora:
+                self._delora_base_weight = self.weight.data.clone()
+                delta = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+                norm = torch.linalg.vector_norm(delta.float()).clamp_min(1e-6)
+                self.weight.data += transpose(
+                    (self.delora_s * delta.float() / norm).to(previous_dtype := self.weight.dtype),
+                    self.fan_in_fan_out,
+                )
             elif self.r > 0:
                 self.weight.data += (
                     transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
@@ -417,6 +440,9 @@ class Linear(nn.Linear, LoraLayer):
             if self.r > 0 and self.use_map:
                 self.weight.data.copy_(self._map_base_weight)
                 del self._map_base_weight
+            elif self.r > 0 and self.use_delora:
+                self.weight.data.copy_(self._delora_base_weight)
+                del self._delora_base_weight
             elif self.r > 0:
                 self.weight.data -= (
                     transpose(self.lora_B.weight @ self.lora_A.weight, self.fan_in_fan_out) * self.scaling
@@ -439,6 +465,9 @@ class Linear(nn.Linear, LoraLayer):
                 if self.use_map:
                     self.weight.data.copy_(self._map_base_weight)
                     del self._map_base_weight
+                elif self.use_delora:
+                    self.weight.data.copy_(self._delora_base_weight)
+                    del self._delora_base_weight
                 else:
                     matmul_output = self.lora_B.weight @ self.lora_A.weight
                     self.weight.data -= transpose(matmul_output.to(previous_dtype), self.fan_in_fan_out) * self.scaling
@@ -455,6 +484,17 @@ class Linear(nn.Linear, LoraLayer):
                     self.lora_dropout(x.to(self.lora_A.weight.dtype)),
                     transpose(delta_weight, self.fan_in_fan_out),
                     bias=None,
+                )
+            elif self.use_delora:
+                # W* = W + s · (AB / ‖AB‖_F)
+                delta = (self.lora_B.weight @ self.lora_A.weight) * self.scaling
+                norm = torch.linalg.vector_norm(delta.float()).clamp_min(1e-6)
+                delta_norm = (delta.float() / norm).to(previous_dtype)
+                effective_weight = self.weight + transpose(self.delora_s * delta_norm, self.fan_in_fan_out)
+                result = F.linear(
+                    self.lora_dropout(x.to(effective_weight.dtype)),
+                    transpose(effective_weight, self.fan_in_fan_out),
+                    bias=self.bias,
                 )
             else:
                 result = F.linear(x, transpose(self.weight, self.fan_in_fan_out), bias=self.bias)

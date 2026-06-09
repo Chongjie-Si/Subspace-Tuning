@@ -246,6 +246,16 @@ def train(
             map_norm_scope=map_norm_scope,
             map_detach_denom=map_detach_denom,
         )
+    elif adapter_name == "delora":
+        config = LoraConfig(
+            r=lora_r,
+            lora_alpha=lora_alpha,
+            target_modules=target_modules,
+            lora_dropout=lora_dropout,
+            bias="none",
+            task_type="CAUSAL_LM",
+            use_delora=True,
+        )
     elif adapter_name == "dora":
         print("DoRA init")
         config = DoraConfig(
