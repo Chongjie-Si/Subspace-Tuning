@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 """run_delora_nlu.py — DeLoRA on DeBERTaV3 GLUE (H100).
 
-Uses standard HF transformers + PEFT (>= 0.14, which ships DeLoRA support).
-Mirrors the exact hyperparameters from the LoMAP paper (Table 4) so results
-are directly comparable with the NLU Table.
+Uses HF PEFT DeloraConfig (peft >= 0.19, which ships the DeLoRA tuner).
+DeLoRA paper: https://huggingface.co/papers/2503.18225
+Mirrors the exact hyperparameters from the LoMAP paper (Table 4).
 
 Usage:
-    # Single task/seed on GPU 0:
     CUDA_VISIBLE_DEVICES=0 python run_delora_nlu.py \
         --task cola --seed 6 --rank 2 --size base \
         --output_root NLU/output/glue
-
-    # Full grid via the shell wrapper (run_delora_nlu_grid.sh):
-    bash deploy/h100_kit/scripts/run_delora_nlu_grid.sh base 2 6,7,8 0,1,2,3,4,5,6,7
 """
 
 import argparse
 import json
 import os
 import sys
-import math
-import numpy as np
 
 import torch
 from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, TaskType
+from peft import DeloraConfig, get_peft_model, TaskType
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -35,9 +29,6 @@ from transformers import (
 )
 import evaluate as hf_evaluate
 
-# ---------------------------------------------------------------------------
-# Per-task hyperparameters (paper Table 4)
-# ---------------------------------------------------------------------------
 TASK_HPS = {
     "mnli":  dict(seq_len=256, lr=5e-4, epochs=12, cls_drop=0.10, metric="accuracy",  num_labels=3),
     "sst2":  dict(seq_len=128, lr=8e-4, epochs=24, cls_drop=0.00, metric="accuracy",  num_labels=2),
@@ -55,37 +46,27 @@ GLUE_KEY = {
     "mrpc": "mrpc", "stsb": "stsb",
 }
 
-TARGET_MODULES = ["query_projections", "key_projections", "value_projections",
-                  "intermediate.dense", "output.dense", "self.out_proj"]
+# DeLoRA docs: use lr 10-100x larger than LoRA; lambda ~10-15
+# We match LoRA lr from the paper for fair comparison (same search budget).
+# delora_lambda=15 is the default recommended value.
+DELORA_LAMBDA = 15
 
-# DeBERTa-v3 actual module names (matched by suffix)
 DEBERTA_TARGET_MODULES = [
     "query_proj", "key_proj", "value_proj",
     "intermediate.dense", "output.dense", "out_proj",
 ]
 
-# ---------------------------------------------------------------------------
-# Metric helpers
-# ---------------------------------------------------------------------------
 
 def compute_metrics_fn(task, is_regression):
     glue_metric = hf_evaluate.load("glue", GLUE_KEY[task])
 
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
-        if is_regression:
-            preds = logits.squeeze()
-        else:
-            preds = logits.argmax(axis=-1)
-        result = glue_metric.compute(predictions=preds, references=labels)
-        return result
+        preds = logits.squeeze() if is_regression else logits.argmax(axis=-1)
+        return glue_metric.compute(predictions=preds, references=labels)
 
     return compute_metrics
 
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser()
@@ -100,7 +81,6 @@ def main():
     hp = TASK_HPS[task]
     is_regression = (task == "stsb")
     rank = args.rank
-    alpha = rank * 2  # paper convention
     size = args.size
 
     model_name = (
@@ -129,14 +109,14 @@ def main():
         if task == "mnli":
             return tokenizer(examples["premise"], examples["hypothesis"],
                              truncation=True, max_length=hp["seq_len"])
-        elif task in ("rte", "mrpc", "qqp", "qnli"):
-            key1, key2 = {
-                "rte": ("sentence1", "sentence2"),
-                "mrpc": ("sentence1", "sentence2"),
-                "qqp": ("question1", "question2"),
-                "qnli": ("question", "sentence"),
-            }[task]
-            return tokenizer(examples[key1], examples[key2],
+        elif task in ("rte", "mrpc"):
+            return tokenizer(examples["sentence1"], examples["sentence2"],
+                             truncation=True, max_length=hp["seq_len"])
+        elif task == "qqp":
+            return tokenizer(examples["question1"], examples["question2"],
+                             truncation=True, max_length=hp["seq_len"])
+        elif task == "qnli":
+            return tokenizer(examples["question"], examples["sentence"],
                              truncation=True, max_length=hp["seq_len"])
         elif task == "stsb":
             return tokenizer(examples["sentence1"], examples["sentence2"],
@@ -145,11 +125,9 @@ def main():
             key = {"cola": "sentence", "sst2": "sentence"}[task]
             return tokenizer(examples[key], truncation=True, max_length=hp["seq_len"])
 
-    tokenized = raw.map(preprocess, batched=True, remove_columns=raw["train"].column_names
-                        if task != "mnli" else
-                        [c for c in raw["train"].column_names if c != "label"])
+    remove_cols = [c for c in raw["train"].column_names if c != "label"]
+    tokenized = raw.map(preprocess, batched=True, remove_columns=remove_cols)
 
-    label_col = "label"
     train_ds = tokenized["train"]
     eval_key = "validation_matched" if task == "mnli" else "validation"
     eval_ds = tokenized[eval_key]
@@ -157,7 +135,7 @@ def main():
     collator = DataCollatorWithPadding(tokenizer)
 
     # -----------------------------------------------------------------------
-    # Model + DeLoRA
+    # Model + DeLoRA (HF PEFT DeloraConfig)
     # -----------------------------------------------------------------------
     model = AutoModelForSequenceClassification.from_pretrained(
         model_name,
@@ -166,37 +144,19 @@ def main():
         attention_probs_dropout_prob=hp["cls_drop"],
     )
 
-    # Find actual target module names for this model
-    found_targets = []
-    for name, _ in model.named_modules():
-        for t in DEBERTA_TARGET_MODULES:
-            if name.endswith(t) and name not in found_targets:
-                found_targets.append(t)
-                break
-    # Deduplicate while preserving order
-    seen = set()
-    unique_targets = []
-    for t in found_targets:
-        if t not in seen:
-            seen.add(t)
-            unique_targets.append(t)
-
-    lora_config = LoraConfig(
+    delora_config = DeloraConfig(
         task_type=TaskType.SEQ_CLS,
         r=rank,
-        lora_alpha=alpha,
-        lora_dropout=0.0,
+        delora_lambda=DELORA_LAMBDA,
+        target_modules=DEBERTA_TARGET_MODULES,
         bias="none",
-        target_modules=unique_targets or DEBERTA_TARGET_MODULES,
-        use_dora=True,   # DeLoRA uses DoRA-style decoupled scaling in PEFT >= 0.14
     )
-    model = get_peft_model(model, lora_config)
+    model = get_peft_model(model, delora_config)
     model.print_trainable_parameters()
 
     # -----------------------------------------------------------------------
     # Training
     # -----------------------------------------------------------------------
-    best_metric = hp["metric"]
     save_steps = 200 if task not in ("mnli", "qqp", "qnli") else \
                  2000 if task in ("mnli", "qqp") else 1000
 
@@ -215,7 +175,7 @@ def main():
         save_steps=save_steps,
         save_total_limit=2,
         load_best_model_at_end=True,
-        metric_for_best_model=best_metric,
+        metric_for_best_model=hp["metric"],
         greater_is_better=True,
         logging_steps=50,
         seed=args.seed,
@@ -237,9 +197,6 @@ def main():
 
     trainer.train()
 
-    # -----------------------------------------------------------------------
-    # Save results in NLU-compatible format
-    # -----------------------------------------------------------------------
     metrics = trainer.evaluate()
     os.makedirs(os.path.join(out_dir, "model"), exist_ok=True)
     with open(results_path, "w") as f:
@@ -251,3 +208,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

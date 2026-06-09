@@ -21,9 +21,9 @@ SCRIPTS="$REPO_ROOT/deploy/h100_kit/scripts"
 
 source "$REPO_ROOT/.venv/bin/activate"
 
-# Upgrade peft to >= 0.14 for DeLoRA support (idempotent)
-echo ">>> Ensuring peft >= 0.14 ..."
-pip install "peft>=0.14" --quiet --upgrade
+# Upgrade peft to >= 0.19 for DeloraConfig support (idempotent)
+echo ">>> Ensuring peft >= 0.19 ..."
+pip install "peft>=0.19" --quiet --upgrade
 
 export PYTHONPATH="$REPO_ROOT/NLU/src:$REPO_ROOT/loralib:$PYTHONPATH"
 
@@ -51,5 +51,5 @@ echo "================================================"
 echo "All DeLoRA experiments complete."
 echo "Summary:"
 echo "  NLU: python summarize_nlu.py"
-echo "  CR:  python CR_MR/scripts_for_baselines/aggregate_results.py CR_MR/output"
+echo "  CR:  see logs for per-rank avg accuracy printed by run_delora_cr.sh"
 echo "================================================"

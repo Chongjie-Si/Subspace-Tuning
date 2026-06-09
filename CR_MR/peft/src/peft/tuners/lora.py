@@ -229,6 +229,11 @@ class LoraModel(torch.nn.Module):
             new_module.reset_map_scalars()
         if getattr(new_module, "use_delora", False):
             new_module.delora_s.data = new_module.delora_s.data.to(old_module.weight.device)
+            # re-init with the actual pretrained weight norm (weight was random at __init__ time)
+            with torch.no_grad():
+                new_module.delora_s.copy_(
+                    torch.linalg.vector_norm(new_module.weight.float()).to(new_module.delora_s.dtype)
+                )
 
     def __getattr__(self, name: str):
         """Forward missing attributes to the wrapped module."""

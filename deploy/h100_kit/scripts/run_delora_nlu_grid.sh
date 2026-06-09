@@ -6,9 +6,8 @@
 #   e.g. bash run_delora_nlu_grid.sh base 2 6,7,8 0,1,2,3,4,5,6,7
 #        bash run_delora_nlu_grid.sh base 8 6,7,8 0,1,2,3,4,5,6,7
 #
-# Requires peft >= 0.14 (DeLoRA support) — installed by h100_setup.sh via
-# CR_MR/requirements.txt (peft>=0.13; upgrade to 0.14+ once on the node).
-# If not yet installed: pip install "peft>=0.14" --upgrade
+# Requires peft >= 0.19 (DeloraConfig shipped in that release).
+# If not yet installed: pip install "peft>=0.19" --upgrade
 #
 # Skips runs whose all_results.json already exists (auto-resume).
 

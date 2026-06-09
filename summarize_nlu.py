@@ -58,7 +58,7 @@ def method_stats(method, task, rank, seeds=(6, 7, 8)):
     return vals, avg, std
 
 def print_table(rank=2, seeds=(6, 7, 8)):
-    methods = [("map", "LoMAP"), ("lora", "LoRA")]
+    methods = [("map", "LoMAP"), ("lora", "LoRA"), ("delora", "DeLoRA")]
     paper_refs = {"map": PAPER_LOMAP_R2, "lora": PAPER_LORA_R2}
 
     print(f"\n{'='*90}")

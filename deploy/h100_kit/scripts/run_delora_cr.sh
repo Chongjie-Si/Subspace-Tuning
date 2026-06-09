@@ -113,4 +113,21 @@ for rank in "${RANKS[@]}"; do
 done
 
 echo "DeLoRA CR done."
-"$VENV" "$CR_DIR/scripts_for_baselines/aggregate_results.py" "$CR_DIR/output" || true
+# aggregate_results.py expects a seed-structured layout that run_delora_cr.sh
+# does not produce (single run, no seeds).  Print a quick inline summary instead.
+"$VENV" - <<'PYEOF' || true
+import os, re, sys
+cr_dir = os.environ.get("CR_DIR", "CR_MR")
+datasets = ["boolq","piqa","social_i_qa","hellaswag","winogrande","ARC-Challenge","ARC-Easy","openbookqa"]
+for rank, alpha in [(16, 32), (32, 64)]:
+    out = f"{cr_dir}/output/llama-7b_delora_r{rank}_a{alpha}"
+    accs = []
+    for ds in datasets:
+        f = f"{out}/{ds}.txt"
+        if os.path.exists(f):
+            m = re.findall(r"accuracy\s+\d+\s+([0-9.]+)", open(f).read())
+            if m:
+                accs.append(float(m[-1]))
+    avg = sum(accs) / len(accs) * 100 if accs else 0
+    print(f"DeLoRA r={rank}: {len(accs)}/8 benchmarks, avg={avg:.1f}%")
+PYEOF
