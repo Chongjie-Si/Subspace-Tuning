@@ -114,7 +114,7 @@ class XSoftmax(torch.autograd.Function):
     @staticmethod
     def backward(self, grad_output):
         (output,) = self.saved_tensors
-        inputGrad = _softmax_backward_data(grad_output, output, self.dim, output)
+        inputGrad = _softmax_backward_data(grad_output, output, self.dim, output.dtype)
         return inputGrad, None, None
 
 
@@ -229,7 +229,7 @@ class DebertaV2SelfOutput(nn.Module):
                 self.dense = lora.Linear(config.hidden_size, config.hidden_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.hidden_size, config.hidden_size, r=config.lora_r, 
+                self.dense = lora.LayerTSDLinear(config.hidden_size, config.hidden_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
@@ -295,7 +295,7 @@ class DebertaV2Intermediate(nn.Module):
                 self.dense = lora.Linear(config.hidden_size, config.intermediate_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.hidden_size, config.intermediate_size, r=config.lora_r, 
+                self.dense = lora.LayerTSDLinear(config.hidden_size, config.intermediate_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
@@ -321,7 +321,7 @@ class DebertaV2Output(nn.Module):
                 self.dense = lora.Linear(config.intermediate_size, config.hidden_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.dense = lora.SVDLinear(config.intermediate_size, config.hidden_size, r=config.lora_r, 
+                self.dense = lora.LayerTSDLinear(config.intermediate_size, config.hidden_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
@@ -619,7 +619,7 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.query_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.query_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.query_proj = lora.LayerTSDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
@@ -631,7 +631,7 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.key_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.key_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.key_proj = lora.LayerTSDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)
@@ -643,7 +643,7 @@ class DisentangledSelfAttention(torch.nn.Module):
                 self.value_proj = lora.Linear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                                 lora_alpha=config.lora_alpha, merge_weights=False)
             elif config.lora_type == "svd": 
-                self.value_proj = lora.SVDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
+                self.value_proj = lora.LayerTSDLinear(config.hidden_size, self.all_head_size, r=config.lora_r, 
                                             lora_alpha=config.lora_alpha, merge_weights=False)
             else:
                 raise ValueError("Unimplemented Lora Type: %s"%config.lora_type)

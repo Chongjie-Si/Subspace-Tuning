@@ -1,0 +1,26 @@
+Metadata-Version: 2.4
+Name: loralib
+Version: 0.1.2
+Summary: PyTorch implementation of low-rank adaptation (LoRA), a parameter-efficient approach to adapt a large pre-trained deep learning model which obtains performance on-par with full fine-tuning.
+Home-page: https://github.com/microsoft/LoRA
+Author: Edward J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, Weizhu Chen
+Author-email: edward.hu@microsoft.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: requires-python
+Dynamic: summary
+
+# Information Box
+
+In this folder, we provide scripts for several PEFT algorithms. We focus on their implementation, as you know, certain details are only reflected in the code and not mentioned in the papers. In each script, we primarily wrote the forward function.
+
+If you have a more complete or elegant implementation, or if you notice discrepancies in our implementation, we welcome you to submit a pull request to our repository.
